@@ -1,0 +1,4 @@
+At the time of the creation of this file, all code is copyright Travis Ford Wellman.
+
+You may use it under the GPLv3
+http://opensource.org/licenses/gpl-3.0.html
