@@ -1,4 +1,5 @@
 At the time of the creation of this file, all code is copyright Travis Ford Wellman.
 
-You may use it under the GPLv3
-http://opensource.org/licenses/gpl-3.0.html
+You may use it under the GPLv3 of which there is a copy in this
+repository named GPLv3.txt which was copied from:
+http://www.gnu.org/licenses/gpl.txt
