@@ -4,8 +4,8 @@ import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.rewrwe.spac.Pattern;
-import org.rewrwe.spac.PatternInflator;
+import org.spaciousness.android.Pattern;
+import org.spaciousness.android.PatternInflator;
 
 /**
  * A GraphDatum provides access to the fields enumerated in SubjectPredicateObject.

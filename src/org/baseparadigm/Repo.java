@@ -12,9 +12,9 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.rewrwe.spac.Pattern;
-import org.rewrwe.spac.Subscription;
-import org.rewrwe.spac.ToByteArray;
+import org.spaciousness.android.Pattern;
+import org.spaciousness.android.Subscription;
+import org.spaciousness.android.ToByteArray;
 
 import static org.baseparadigm.SubjectPredicateObject.ASSUMPTIONS;
 import static org.baseparadigm.SubjectPredicateObject.AUTHORS;

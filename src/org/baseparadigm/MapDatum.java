@@ -13,10 +13,10 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.rewrwe.spac.MetadataFields;
-import org.rewrwe.spac.SpaciousnessStatic;
-import org.rewrwe.spac.ToByteArray;
-import org.rewrwe.spac.TypeValues;
+import org.spaciousness.android.MetadataFields;
+import org.spaciousness.android.SpaciousnessStatic;
+import org.spaciousness.android.ToByteArray;
+import org.spaciousness.android.TypeValues;
 
 public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     public SortedMap<ContentId, SetDatum> backingMap = null;
