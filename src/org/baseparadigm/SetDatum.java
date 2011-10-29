@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.spaciousness.android.ToByteArray;
+import org.spaciousness.ToByteArray;
 
 /**
  * DatumSet and DatumMap are core elements of the BaseParadigm data model.
