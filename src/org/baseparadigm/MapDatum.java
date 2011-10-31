@@ -105,14 +105,14 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      * build(type.fieldName, string.getBytes())
      */
     public MapDatum build(MetadataFields type, String string) {
-        return build(type.fieldName, string.getBytes());
+        return build(type.name(), string.getBytes());
     }
 
     /**
      * build(content.fieldName, bytes)
      */
     public MapDatum build(MetadataFields content, byte[] bytes) {
-        return build(content.fieldName, bytes);
+        return build(content.name(), bytes);
     }
 
     /**
@@ -201,7 +201,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      */
     public SetDatum getField(MetadataFields field) {
         // TODO optimize
-        return get(bp.idFor(field.fieldName.getBytes(SpaciousnessStatic.defaultCharset)));
+        return get(bp.idFor(field.name().getBytes(SpaciousnessStatic.defaultCharset)));
     }
     
     
@@ -328,7 +328,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      * convenience for put(ContentId, byte[])
      */
     public SetDatum put(MetadataFields metadataField, byte[] byteArray) {
-        return this.put(metadataField.fieldName, byteArray);
+        return this.put(metadataField.name(), byteArray);
     }
     
     /**

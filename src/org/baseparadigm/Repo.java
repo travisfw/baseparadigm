@@ -168,7 +168,9 @@ public class Repo implements Map<ContentId, byte[]>{
     public Subscription subscribe(final Pattern pattern) {
         final BlockingQueue<ContentId> q = new LinkedBlockingQueue<ContentId>();
         
-        Subscription subs = new Subscription(q, pattern) {
+        Subscription subs = new Subscription( null // TODO what is the parent?
+                , q
+                , pattern) {
             private boolean cancelled = false;
 
             @Override
