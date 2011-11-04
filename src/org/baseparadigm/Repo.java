@@ -269,7 +269,7 @@ public class Repo implements Map<ContentId, byte[]>{
                 oneIdx.put(keyword, theId);
         }
         for (Subscription subs : subscriptions) {
-            for (Pattern pat : subs.p)
+            for (Pattern pat : subs.patterns)
                 offerTheId: {
                 if (pat.isPartialMatch(toIndex)) {
                     subs.q.offer(theId);
