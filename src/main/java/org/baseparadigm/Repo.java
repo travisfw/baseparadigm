@@ -27,6 +27,7 @@ public class Repo implements Map<ContentId, byte[]>{
     public static final Charset defaultCharset = Charset.forName("UTF8");
     public static Repo commons;
     private Map<ContentId, byte[]> map = new HashMap<ContentId, byte[]>();
+    private MessageDigest md;
     
     /**
      * Subclasses should change this according to the way they create content ids.
@@ -38,18 +39,18 @@ public class Repo implements Map<ContentId, byte[]>{
 
     public Repo(Map<ContentId, byte[]> content) {
         map = content;
-        initIdx();
+        init();
     }
     public Repo(Map.Entry<ContentId, byte[]>... content ) {
-        initIdx();
+        init();
         for (Map.Entry<ContentId, byte[]> metaEntry : content)
             put(metaEntry);
     }
 
-
     public Repo() {
-        initIdx();
+        init();
     }
+    
     public static Repo commonsInstance() {
         if (commons == null)
             commons= new Repo();
@@ -66,7 +67,7 @@ public class Repo implements Map<ContentId, byte[]>{
      * An index of indices.
      */
     public Map<SubjectPredicateObject, MapDatum> idx = new HashMap<SubjectPredicateObject, MapDatum>();
-    private void initIdx() {
+    private void init() {
         idx.put(SubjectPredicateObject.SUBJECTS,    subjIdx);
         idx.put(SubjectPredicateObject.PREDICATES,  predIdx);
         idx.put(SubjectPredicateObject.OBJECTS,     objeIdx);
@@ -74,6 +75,11 @@ public class Repo implements Map<ContentId, byte[]>{
         idx.put(SubjectPredicateObject.AUTHORS,     authIdx);
         idx.put(SubjectPredicateObject.PATTERNS,    pattIdx);
         idx = Collections.unmodifiableMap(idx);
+        try {
+            md = MessageDigest.getInstance(COMMONS_ID_ALGORITHM);
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error("depending on "+ COMMONS_ID_ALGORITHM +" being available.", e);
+        }
     }
     
     private static Set<ContentId> nullToEmptySet(Set<ContentId> s) {
@@ -324,7 +330,7 @@ public class Repo implements Map<ContentId, byte[]>{
         return this.map.put(key, value);
     }
     /**
-     * Convenience for put(BigInteger key, byte[] value).
+     * Convenience for put(ContentId key, byte[] value).
      */
     public byte[] put(java.util.Map.Entry<ContentId, byte[]> entry) {
         return put(entry.getKey(), entry.getValue());
@@ -355,13 +361,7 @@ public class Repo implements Map<ContentId, byte[]>{
      * The identifier to retrieve the content given.
      */
     public ContentId idFor(byte[] value) {
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance(COMMONS_ID_ALGORITHM);
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error("BaseParadigm commons needs "+ COMMONS_ID_ALGORITHM, e);
-        }
-        return new ContentId(Repo.commons, md.digest(value));
+        return new ContentId(this, md.digest(value));
     }
     public ContentId idFor(ToByteArray value) {
         return idFor(value.toByteArray());
