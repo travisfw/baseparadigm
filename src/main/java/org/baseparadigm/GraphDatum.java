@@ -4,8 +4,6 @@ import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.spaciousness.Pattern;
-import org.spaciousness.PatternInflator;
 
 /**
  * A GraphDatum provides access to the fields enumerated in SubjectPredicateObject.
@@ -136,7 +134,7 @@ public class GraphDatum extends MapDatum {
     public Set<Pattern> getPatterns() {
         Set<Pattern> ret = new HashSet<Pattern>();
         for (ContentId cid : get(bp.PATTERNSid))
-            ret.add(PatternInflator.inflate(cid));
+            ret.add(PatternInflator.inflat(cid));
         return ret;
     }
 

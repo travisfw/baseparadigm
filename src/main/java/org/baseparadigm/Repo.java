@@ -1,6 +1,7 @@
 package org.baseparadigm;
 
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
@@ -29,6 +30,7 @@ public class Repo implements Map<ContentId, byte[]>{
      */
     public static final int COMMONS_KEY_LENGTH = 64;
     public static final String COMMONS_ID_ALGORITHM = "SHA-512";
+    public static final Charset defaultCharset = Charset.forName("UTF8");
     public static Repo commons;
     private Map<ContentId, byte[]> map = new HashMap<ContentId, byte[]>();
     

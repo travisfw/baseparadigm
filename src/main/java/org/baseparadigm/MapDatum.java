@@ -13,10 +13,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.spaciousness.MetadataFields;
-import org.spaciousness.ToByteArray;
-import org.spaciousness.TypeValues;
-import org.spaciousness.android.SpaciousnessStatic;
 
 public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     public SortedMap<ContentId, SetDatum> backingMap = null;
@@ -66,7 +62,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
         put(
-                new ContentId(bp, key.getBytes(SpaciousnessStatic.defaultCharset))
+                new ContentId(bp, key.getBytes(Repo.defaultCharset))
                 , new BigInteger(""+ value).toByteArray()
                 );
         return this;
@@ -79,7 +75,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     public MapDatum build(String key, SetDatum data) {
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
-        put(bp.put(key.getBytes(SpaciousnessStatic.defaultCharset)), data);
+        put(bp.put(key.getBytes(Repo.defaultCharset)), data);
         return this;
     }
 
@@ -90,7 +86,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     public MapDatum build(String key, byte[] item) {
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
-        put(bp.put(key.getBytes(SpaciousnessStatic.defaultCharset)), item);
+        put(bp.put(key.getBytes(Repo.defaultCharset)), item);
         return this;
     }
     
@@ -119,7 +115,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      * like build(MetadataFields.TYPE, byte[])
      */
     public GraphDatum buildType(TypeValues tv) {
-        return (GraphDatum) build(MetadataFields.TYPE, tv.name().getBytes(SpaciousnessStatic.defaultCharset));
+        return (GraphDatum) build(MetadataFields.TYPE, tv.name().getBytes(Repo.defaultCharset));
     }
 
     /**
@@ -201,7 +197,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      */
     public SetDatum getField(MetadataFields field) {
         // TODO optimize
-        return get(bp.idFor(field.name().getBytes(SpaciousnessStatic.defaultCharset)));
+        return get(bp.idFor(field.name().getBytes(Repo.defaultCharset)));
     }
     
     
@@ -335,7 +331,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      * like put(ContentId, byte[])
      */
     public SetDatum put(String fieldName, byte[] byteArray) {
-        return put(bp.idFor(fieldName.getBytes(SpaciousnessStatic.defaultCharset)), byteArray);
+        return put(bp.idFor(fieldName.getBytes(Repo.defaultCharset)), byteArray);
     }
 
     public ContentId id = null;

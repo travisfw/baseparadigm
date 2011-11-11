@@ -2,7 +2,6 @@ package org.baseparadigm;
 
 import java.math.BigInteger;
 
-import org.spaciousness.ToByteArray;
 
 /**
  * A BigInteger aware of the length of byte arrays.

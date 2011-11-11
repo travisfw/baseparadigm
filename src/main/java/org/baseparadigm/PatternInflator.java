@@ -11,19 +11,19 @@ package org.baseparadigm;
 public abstract class PatternInflator {
     
     /**
-     * A default inflator must be provided by a subclass.
+     * A registered inflator must be provided by a subclass.
      */
-    protected static PatternInflator defaultInflator = null;
+    protected static PatternInflator registeredInflator = null;
     
     /**
-     * A subclass of PatternInflator must call this method to register itself as default.
+     * A subclass of PatternInflator must call this method to register itself.
      */
-    protected static void registerDefaultInflator(PatternInflator pi) { defaultInflator = pi; }
+    protected static void registerDefaultInflator(PatternInflator pi) { registeredInflator = pi; }
     
     /**
-     * Get the default PatternInflator.
+     * Use the registered PatternInflator.
      */
-    public static PatternInflator getDefaultInflator() { return defaultInflator; }
+    public static Pattern inflat(ContentId shrunkPattern) { return registeredInflator.inflate(shrunkPattern); }
     
     /**
      * Takes an id for a serialized pattern and return an instance.
