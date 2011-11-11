@@ -1,4 +1,4 @@
-package org.spaciousness;
+package org.baseparadigm;
 
 
 public enum TypeValues implements ToByteArray {

@@ -10,12 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
-import org.spaciousness.Pattern;
-import org.spaciousness.Subscription;
-import org.spaciousness.ToByteArray;
 
 import static org.baseparadigm.SubjectPredicateObject.ASSUMPTIONS;
 import static org.baseparadigm.SubjectPredicateObject.AUTHORS;
@@ -163,33 +157,6 @@ public class Repo implements Map<ContentId, byte[]>{
         return ret;
     }
     
-    
-    /**
-     * A Subscription providing graph data that conform to a pattern.
-     */
-    public Subscription subscribe(final Pattern pattern) {
-        final BlockingQueue<ContentId> q = new LinkedBlockingQueue<ContentId>();
-        
-        Subscription subs = new Subscription( pattern) {
-            private boolean cancelled = false;
-
-            @Override
-            public boolean cancel(boolean mayInterruptIfRunning) {
-                if (isCancelled())
-                    return false;
-                subscriptions.remove(this);
-                cancelled = true;
-                return true;
-            }
-
-            @Override
-            public boolean isCancelled() { return cancelled; }
-        };
-        
-        subscriptions.add(subs);
-        return subs;
-    }
-    
 
     // in groovysh:
     // c = 0; d = java.security.MessageDigest.getInstance("SHA-512");
@@ -252,7 +219,6 @@ public class Repo implements Map<ContentId, byte[]>{
             , 27 , 51 , 53 , 109, 95, -102, -58 , 39
             });
     
-    private Set<Subscription> subscriptions = new HashSet<Subscription>();
     
     /**
      * Index the graph datum for future queries, and also alert subscriptions for which their pattern matches.
@@ -270,15 +236,7 @@ public class Repo implements Map<ContentId, byte[]>{
             for (ContentId keyword : values)
                 oneIdx.put(keyword, theId);
         }
-        for (Subscription subs : subscriptions) {
-            for (Pattern pat : subs.patterns)
-                offerTheId: {
-                if (pat.isPartialMatch(toIndex)) {
-                    subs.q.offer(theId);
-                    break offerTheId;
-                }
-            }
-        }
+        // TODO publish indexed datum to subscriptions?
     }
     
     @Override

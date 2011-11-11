@@ -14,8 +14,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.spaciousness.ToByteArray;
-
 /**
  * DatumSet and DatumMap are core elements of the BaseParadigm data model.
  * They should both serialize and deserialize to/from a byte stream containing uniform length ContentIds.
