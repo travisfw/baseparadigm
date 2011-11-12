@@ -7,6 +7,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -120,7 +122,11 @@ public class Repo implements Map<ContentId, byte[]>{
             , 118, 78 , 112, -9, -108, 12 , -40 , 15
             , 27 , 51 , 53 , 109, 95, -102, -58 , 39
             });
-    public Repo backup;
+    
+    /**
+     * add to backups to do things like persist to disk and keep stuff on other machines
+     */
+    public List<Repo> backups = new LinkedList<Repo>();
     
     
     @Override
@@ -186,8 +192,8 @@ public class Repo implements Map<ContentId, byte[]>{
     @Override
     public byte[] put(ContentId key, byte[] value) {
         assert key.equals(idFor(value));
-        if (backup != null)
-            backup.put(value);
+        for (Repo b : backups)
+            b.put(value);
         return this.map.put(key, value);
     }
     /**
