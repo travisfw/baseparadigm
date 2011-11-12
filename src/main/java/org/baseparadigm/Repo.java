@@ -120,7 +120,7 @@ public class Repo implements Map<ContentId, byte[]>{
             , 118, 78 , 112, -9, -108, 12 , -40 , 15
             , 27 , 51 , 53 , 109, 95, -102, -58 , 39
             });
-    
+    public Repo backup;
     
     
     @Override
@@ -142,28 +142,10 @@ public class Repo implements Map<ContentId, byte[]>{
     @Override
     public byte[] get(Object key) {
         assert key instanceof ContentId && ((ContentId)key).bp == this;
-        return get(new BigInteger((byte[])key));
-    }
-    
-    /**
-     * If the id is 1, a map of metadata
-     *  for this repository will be returned, including things like KEY_LENGTH.
-     * 
-     * @param key
-     * The id for some content.
-     * 
-     * @return
-     * The content for the id given.
-     */
-    public byte[] get(ContentId key) {
-        if (BigInteger.ONE.equals(key)) {
-            return getRepoMetadata();
-        }
         return this.map.get(key);
     }
     
     /**
-     * 
      * @return Metadata for this repository including things like KEY_LENGTH.
      */
     public byte[] getRepoMetadata() {
@@ -172,9 +154,9 @@ public class Repo implements Map<ContentId, byte[]>{
         return this.metaData;
     }
     
-    public Set<byte[]> getAll(Iterable<BigInteger> keys) {
+    public Set<byte[]> getAll(Iterable<ContentId> keys) {
         Set<byte[]> ret = new HashSet<byte[]>();
-        for (BigInteger k : keys)
+        for (ContentId k : keys)
             ret.add(get(k));
         return ret;
     }
@@ -196,15 +178,16 @@ public class Repo implements Map<ContentId, byte[]>{
         return this.map.keySet();
     }
     
+    
     /**
      * If you use this method, be sure that the key.equals(idFor(value)).
      * Unlike put(byte[] value), this put conforms to the Map interface method signature.
      */
     @Override
     public byte[] put(ContentId key, byte[] value) {
-        key = key.clone();
-        key.bp = this;
         assert key.equals(idFor(value));
+        if (backup != null)
+            backup.put(value);
         return this.map.put(key, value);
     }
     /**
@@ -213,7 +196,6 @@ public class Repo implements Map<ContentId, byte[]>{
     public byte[] put(java.util.Map.Entry<ContentId, byte[]> entry) {
         return put(entry.getKey(), entry.getValue());
     }
-    
     /**
      * This put returns the key associated with the value inserted.
      * 
@@ -225,9 +207,16 @@ public class Repo implements Map<ContentId, byte[]>{
      */
     public ContentId put(byte[] value) {
         ContentId id = idFor(value);
-        this.map.put(id, value);
+        put(id, value);
         return id;
     }
+    /**
+     * put(data.toByteArray())
+     */
+    public ContentId put(ToByteArray data) {
+        return put(data.toByteArray());
+    }
+    
     
     /**
      * Subclasses override idFor.
@@ -271,9 +260,6 @@ public class Repo implements Map<ContentId, byte[]>{
     @Override
     public Collection<byte[]> values() {
         return this.map.values();
-    }
-    public ContentId put(ToByteArray data) {
-        return put(data.toByteArray());
     }
     
     public ContentId idFor(SubjectPredicateObject key) {

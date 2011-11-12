@@ -10,7 +10,7 @@ import java.math.BigInteger;
  *
  */
 public class ContentId extends BigInteger implements ToByteArray {
-    public Repo bp;
+    public final Repo bp;
 
     private static final long serialVersionUID = 492010517573211305L;
 

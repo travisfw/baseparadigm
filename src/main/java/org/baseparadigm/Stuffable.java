@@ -3,7 +3,7 @@ package org.baseparadigm;
 public interface Stuffable {
 
     /**
-     * Initializes the Pattern after using the zero arg constructor.
+     * Initializes after using the zero arg constructor.
      */
     public void init(ContentId cid);
     
