@@ -10,9 +10,13 @@ import java.io.InputStream;
 
 public class RepoFs extends Repo {
     public File storageDir;
+    public File getStorageDir() {return storageDir;}
     
     public RepoFs(File storageDir) {
         super();
+        if (! storageDir.mkdirs())
+            if (! storageDir.exists())
+                throw new RuntimeException("can't use "+ storageDir.getAbsolutePath());
         this.storageDir = storageDir;
     }
     
