@@ -15,8 +15,8 @@ import java.util.TreeMap;
 
 
 public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
-    public SortedMap<ContentId, SetDatum> backingMap = null;
-    public Repo bp = null;
+    public SortedMap<ContentId, SetDatum> backingMap;
+    public Repo bp;
     private boolean modifyRepo = true;
     private boolean isMutable = true;
     public MapDatum(Repo repo, BigInteger datumId) {

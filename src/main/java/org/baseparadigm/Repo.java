@@ -5,18 +5,10 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import static org.baseparadigm.SubjectPredicateObject.ASSUMPTIONS;
-import static org.baseparadigm.SubjectPredicateObject.AUTHORS;
-import static org.baseparadigm.SubjectPredicateObject.OBJECTS;
-import static org.baseparadigm.SubjectPredicateObject.PATTERNS;
-import static org.baseparadigm.SubjectPredicateObject.PREDICATES;
-import static org.baseparadigm.SubjectPredicateObject.SUBJECTS;
 
 public class Repo implements Map<ContentId, byte[]>{
     /**
@@ -56,25 +48,8 @@ public class Repo implements Map<ContentId, byte[]>{
             commons= new Repo();
         return commons;
     }
-    public MapDatum subjIdx = new MapDatum(this);
-    public MapDatum predIdx = new MapDatum(this);
-    public MapDatum objeIdx = new MapDatum(this);
-    public MapDatum assuIdx = new MapDatum(this);
-    public MapDatum authIdx = new MapDatum(this);
-    public MapDatum pattIdx = new MapDatum(this);
     
-    /**
-     * An index of indices.
-     */
-    public Map<SubjectPredicateObject, MapDatum> idx = new HashMap<SubjectPredicateObject, MapDatum>();
     private void init() {
-        idx.put(SubjectPredicateObject.SUBJECTS,    subjIdx);
-        idx.put(SubjectPredicateObject.PREDICATES,  predIdx);
-        idx.put(SubjectPredicateObject.OBJECTS,     objeIdx);
-        idx.put(SubjectPredicateObject.ASSUMPTIONS, assuIdx);
-        idx.put(SubjectPredicateObject.AUTHORS,     authIdx);
-        idx.put(SubjectPredicateObject.PATTERNS,    pattIdx);
-        idx = Collections.unmodifiableMap(idx);
         try {
             md = MessageDigest.getInstance(COMMONS_ID_ALGORITHM);
         } catch (NoSuchAlgorithmException e) {
@@ -82,86 +57,7 @@ public class Repo implements Map<ContentId, byte[]>{
         }
     }
     
-    private static Set<ContentId> nullToEmptySet(Set<ContentId> s) {
-        if (s == null) return new HashSet<ContentId>();
-        return s;
-    }
     
-    /**
-     * Equivalent to idx.get(which).get(query) but probably faster.
-     * 
-     * @param which
-     * Which index to query.
-     * 
-     * @param contentId
-     * What to query the index for.
-     * 
-     * @return
-     * Content that has been registered in the index to contain the query.
-     */
-    public Set<ContentId> query(SubjectPredicateObject which, ContentId contentId){
-        switch (which) {
-        case SUBJECTS:
-            return nullToEmptySet(subjIdx.get(contentId));
-        case PREDICATES:
-            return nullToEmptySet(predIdx.get(contentId));
-        case OBJECTS:
-            return nullToEmptySet(objeIdx.get(contentId));
-        case ASSUMPTIONS:
-            return nullToEmptySet(assuIdx.get(contentId));
-        case AUTHORS:
-            return nullToEmptySet(authIdx.get(contentId));
-        case PATTERNS:
-            return nullToEmptySet(authIdx.get(contentId));
-        default:
-            assert which == null : "which is not null? which: "+ which.toString() +"\nThis code should only be reachable with a null which.";
-            throw new NullPointerException("which must be an instance of the enumeration SubjectPredicateObject");
-        }
-    }
-    
-    /**
-     * A set of graph data that are supersets of the given GraphDatum.
-     * 
-     * @param query
-     * The constraints that the result set should match.
-     * 
-     * @return
-     * Query results.
-     */
-    public Set<ContentId> query(GraphDatum query){
-        assert query.bp == this;
-        Set<ContentId> ret = null;
-        for (Map.Entry<ContentId, SetDatum> kv : query.entrySet()) {
-            SubjectPredicateObject k = aaspoFor(kv.getKey());
-            for (ContentId v : kv.getValue()) {
-                if (ret == null)
-                    ret = query(k, v);
-                else
-                    ret.retainAll(query(k, v));
-            }
-        }
-        return nullToEmptySet(ret);
-    }
-    
-    /**
-     * Convenience method for query(kv.getKey(), kv.getValue()).
-     */
-    public Set<ContentId> query(Entry<SubjectPredicateObject, ContentId> kv) {
-        return query(kv.getKey(), kv.getValue());
-    }
-
-    /**
-     * Union of five queries; one for each of SubjectPredicateObject.
-     * @param id
-     * The key content that would be contained in each query result.
-     */
-    public Set<ContentId> queryAll(ContentId id) {
-        Set<ContentId> ret = new HashSet<ContentId>();
-        for (SubjectPredicateObject i : SubjectPredicateObject.values()) {
-            ret.addAll(query(i, id));
-        }
-        return ret;
-    }
     
 
     // in groovysh:
@@ -226,24 +122,6 @@ public class Repo implements Map<ContentId, byte[]>{
             });
     
     
-    /**
-     * Index the graph datum for future queries, and also alert subscriptions for which their pattern matches.
-     * @param toIndex
-     */
-    public void index(GraphDatum toIndex) {
-        assert toIndex.bp == this;
-        ContentId theId = toIndex.bp.idFor(toIndex);
-        // find possible subscriptions
-        for (SubjectPredicateObject aaspo : SubjectPredicateObject.values() ) {
-            // each value will become a keyword. well, not a word, but same concept.
-            Set<ContentId> values = toIndex.get(aaspo);
-            // one of the five indexes
-            MapDatum oneIdx = idx.get(aaspo);
-            for (ContentId keyword : values)
-                oneIdx.put(keyword, theId);
-        }
-        // TODO publish indexed datum to subscriptions?
-    }
     
     @Override
     public void clear() {
@@ -263,7 +141,7 @@ public class Repo implements Map<ContentId, byte[]>{
     }
     @Override
     public byte[] get(Object key) {
-        assert key instanceof byte[];
+        assert key instanceof ContentId && ((ContentId)key).bp == this;
         return get(new BigInteger((byte[])key));
     }
     
@@ -277,7 +155,7 @@ public class Repo implements Map<ContentId, byte[]>{
      * @return
      * The content for the id given.
      */
-    public byte[] get(BigInteger key) {
+    public byte[] get(ContentId key) {
         if (BigInteger.ONE.equals(key)) {
             return getRepoMetadata();
         }
@@ -400,37 +278,21 @@ public class Repo implements Map<ContentId, byte[]>{
     
     public ContentId idFor(SubjectPredicateObject key) {
         switch (key) {
-        case OBJECTS:
-            return OBJECTSid;
-        case PREDICATES:
-            return PREDICATESid;
         case SUBJECTS:
             return SUBJECTSid;
+        case PREDICATES:
+            return PREDICATESid;
+        case OBJECTS:
+            return OBJECTSid;
         case AUTHORS:
             return AUTHORSid;
         case ASSUMPTIONS:
             return ASSUMPTIONSid;
+        case PATTERNS:
+            return PATTERNSid;
         default:
             throw new Error("is there a new member of SubjectPredicateObject that isn't accounted for?");
         }
-    }
-    
-    /**
-     * If the key is one of the five ids for aaspo, returns the appropriate aaspo, otherwise throws an IllegalArgumentException;
-     */
-    protected SubjectPredicateObject aaspoFor(ContentId key) {
-        assert key.bp == this;
-        if (key.equals(AUTHORSid))
-            return SubjectPredicateObject.AUTHORS;
-        if (key.equals(ASSUMPTIONSid))
-            return SubjectPredicateObject.ASSUMPTIONS;
-        if (key.equals(SUBJECTSid))
-            return SubjectPredicateObject.SUBJECTS;
-        if (key.equals(PREDICATESid))
-            return SubjectPredicateObject.PREDICATES;
-        if (key.equals(OBJECTSid))
-            return SubjectPredicateObject.OBJECTS;
-        throw new IllegalArgumentException("key is not a SubjectPredicateObject");
     }
     
 }

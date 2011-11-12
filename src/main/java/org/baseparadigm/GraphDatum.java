@@ -137,13 +137,6 @@ public class GraphDatum extends MapDatum {
             ret.add(PatternInflator.inflat(cid));
         return ret;
     }
-
-    /**
-     * Checks that the GraphDatum matches somewhere in the pattern.
-     */
-    public boolean isPieceOfPattern(GraphData pattern) {
-        throw new Error("unimplemented");
-    }
     
     
 }
