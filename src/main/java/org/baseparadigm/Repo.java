@@ -11,6 +11,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class Repo implements Map<ContentId, byte[]>{
     /**
@@ -127,7 +131,12 @@ public class Repo implements Map<ContentId, byte[]>{
      * add to backups to do things like persist to disk and keep stuff on other machines
      */
     public List<Repo> backups = new LinkedList<Repo>();
-    
+
+    /**
+     * used for backup operations. set to null to disable backup.
+     */
+    public static Executor ex = new ThreadPoolExecutor(0, 2, 1, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+
     
     @Override
     public void clear() {
@@ -190,10 +199,15 @@ public class Repo implements Map<ContentId, byte[]>{
      * Unlike put(byte[] value), this put conforms to the Map interface method signature.
      */
     @Override
-    public byte[] put(ContentId key, byte[] value) {
+    public byte[] put(final ContentId key, final byte[] value) {
         assert key.equals(idFor(value));
-        for (Repo b : backups)
-            b.put(value);
+        if (Repo.ex != null)
+            Repo.ex.execute(new Runnable() {
+                public void run() {
+                    for (Repo b : backups)
+                        b.put(value);
+                }
+            });
         return this.map.put(key, value);
     }
     /**
