@@ -22,6 +22,10 @@ public class Repo implements Map<ContentId, byte[]>{
      */
     public static final int COMMONS_KEY_LENGTH = 64;
     public static final String COMMONS_ID_ALGORITHM = "SHA-512";
+    /**
+     * This is because big integers are signed and it is sometimes necessary to transform it to unsigned.
+     * Subclasses change this if you implement a new id algorithm with a different range of possible values.
+     */
     public static final BigInteger maxRange = new BigInteger("6677614145500822869199612450086833169372076310647976309689773738637898163997413592367992297518418569869153121528171484150693110263204762287047346759892863");
 //    public static final BigInteger minRange = new BigInteger("-6677614145500822869199612450086833169372076310647976309689773738637898163997413592367992297518418569869153121528171484150693110263204762287047346759892864");
     public static final Charset defaultCharset = Charset.forName("UTF8");
