@@ -22,6 +22,8 @@ public class Repo implements Map<ContentId, byte[]>{
      */
     public static final int COMMONS_KEY_LENGTH = 64;
     public static final String COMMONS_ID_ALGORITHM = "SHA-512";
+    public static final BigInteger maxRange = new BigInteger("6677614145500822869199612450086833169372076310647976309689773738637898163997413592367992297518418569869153121528171484150693110263204762287047346759892863");
+//    public static final BigInteger minRange = new BigInteger("-6677614145500822869199612450086833169372076310647976309689773738637898163997413592367992297518418569869153121528171484150693110263204762287047346759892864");
     public static final Charset defaultCharset = Charset.forName("UTF8");
     public static Repo commons;
     private Map<ContentId, byte[]> map = new HashMap<ContentId, byte[]>();
