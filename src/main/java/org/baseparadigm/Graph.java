@@ -7,9 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
-public class Graph {
+public class Graph extends SetDatum {
     public Set<Repo> repos = new HashSet<Repo>();
-    public Repo primaryRepo;
 
     public MapDatum subjIdx;
     public MapDatum predIdx;
@@ -24,8 +23,8 @@ public class Graph {
     public Map<SubjectPredicateObject, MapDatum> idx = new HashMap<SubjectPredicateObject, MapDatum>();
 
     public Graph(Repo r) {
+        super(r);
         repos.add(r);
-        primaryRepo = r;
         
         subjIdx = new MapDatum(r);
         predIdx = new MapDatum(r);
@@ -81,7 +80,7 @@ public class Graph {
      * Index the graph datum for future queries, and also alert subscriptions for which their pattern matches.
      * @param toIndex
      */
-    public void insert(GraphDatum toIndex) {
+    public void add(GraphDatum toIndex) {
         assert someEqual(repos, toIndex.bp);
         ContentId theId = toIndex.id(); // id() is where toIndex gets stored in toIndex.bp
         for (Repo r : repos) // store in the rest of the repos too
@@ -160,17 +159,17 @@ public class Graph {
      */
     protected SubjectPredicateObject spoaapFor(ContentId key) {
         assert someEqual(repos, key.bp);
-        if (key.equals(primaryRepo.SUBJECTSid))
+        if (key.equals(bp.SUBJECTSid))
             return SubjectPredicateObject.SUBJECTS;
-        if (key.equals(primaryRepo.PREDICATESid))
+        if (key.equals(bp.PREDICATESid))
             return SubjectPredicateObject.PREDICATES;
-        if (key.equals(primaryRepo.OBJECTSid))
+        if (key.equals(bp.OBJECTSid))
             return SubjectPredicateObject.OBJECTS;
-        if (key.equals(primaryRepo.AUTHORSid))
+        if (key.equals(bp.AUTHORSid))
             return SubjectPredicateObject.AUTHORS;
-        if (key.equals(primaryRepo.ASSUMPTIONSid))
+        if (key.equals(bp.ASSUMPTIONSid))
             return SubjectPredicateObject.ASSUMPTIONS;
-        if (key.equals(primaryRepo.PATTERNSid))
+        if (key.equals(bp.PATTERNSid))
             return SubjectPredicateObject.PATTERNS;
         throw new IllegalArgumentException("key is not a SubjectPredicateObject");
     }
