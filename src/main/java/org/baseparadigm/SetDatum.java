@@ -108,11 +108,9 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray{
      * the instance called.
      */
     public SetDatum build(URI uri) {
-        try {
-            add( bp.put(
-                    uri.toString().getBytes("UTF8")
-                    ));
-        } catch (UnsupportedEncodingException e) { throw new Error(e); }
+        add( bp.put(
+                uri.toString().getBytes(Repo.defaultCharset)
+                ));
         return this;
     }
 
