@@ -137,6 +137,8 @@ public class Repo implements Map<ContentId, byte[]>{
      * add to backups to do things like persist to disk and keep stuff on other machines
      */
     public List<Repo> backups = new LinkedList<Repo>();
+    
+    public List<Repo> getBackups() {return backups;}
 
     /**
      * used for backup operations. set to null to disable backup.
