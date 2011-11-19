@@ -1,0 +1,45 @@
+
+<div style="width: 30em">
+<p>
+here's a generalization for you.<br />
+users do two things with a computer:<br />
+consume data (navigate data)<br />
+produce data (execute transforms)
+</p><p>
+both of these things need to be represented as edges. in fact, they
+can be both thought of as the same action. you don't need to know if
+an operation has been completed to ascertain the result of it. all
+arbitrary static navigation paths could be thought of as already
+completed (memoized) operations where the producing function is
+obscure, lost, or human. All navigation paths that require calculation
+can be thought of as lazily evaluated static navigation paths
+likewise.
+</p><p>
+org.baseparadigm.memo defines a scripting language where this
+distinction is completely hidden from the programmer.
+</p><p>
+Certainly this paradigm is guided by
+<a href="http://en.wikipedia.org/wiki/Functional_programming">functional programming</a>
+
+but it differs from a language like Haskell in that bp.memo makes no
+attempt to control purity. in contrast, any operation can be written
+in any language and executed anywhere, or filled in arbitrarily. this
+is necessary to be a high level, extensible, compatible scripting
+environment where there is no guarantee about how runtime is managed
+</p><p>
+
+instead of constraining the implementation of functions, function
+results are signed by the one who executes them, and that signature is
+checked by the one who reads them. Yes, signing and checking every
+operation is inefficient, which is why this is a <em>high level</em>
+language. operations that need to be efficient should be done in a
+lower level language and published as predicates to be
+executed/memoized in bp.memo scripts. This pattern of usage is like
+shell scripting lanugages, eg bash, which don't even have built in
+math functionality.
+</p><p>
+
+bp.memo could be thought of a language built out of apis.
+</p>
+
+</div>
