@@ -63,7 +63,7 @@ public class MemoScriptEngine implements ScriptEngine, Compilable {
     }
 
     @Override
-    public Bindings getBindings(int scope) {
+    public MemoBindings getBindings(int scope) {
         // TODO Auto-generated method stub
         throw new Error("unimplemented");
     }
@@ -71,13 +71,14 @@ public class MemoScriptEngine implements ScriptEngine, Compilable {
     @Override
     public void setBindings(Bindings bindings, int scope) {
         // TODO Auto-generated method stub
+        if (! (bindings instanceof MemoBindings))
+            throw new IllegalArgumentException("needs a MemoBindings instance");
         throw new Error("unimplemented");
     }
 
     @Override
-    public Bindings createBindings() {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+    public MemoBindings createBindings() {
+        return new MemoBindings();
     }
 
     @Override
