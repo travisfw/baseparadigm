@@ -3,12 +3,14 @@ package org.baseparadigm.memo;
 import java.io.Reader;
 
 import javax.script.Bindings;
+import javax.script.Compilable;
+import javax.script.CompiledScript;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 
-public class MemoScriptEngine implements ScriptEngine{
+public class MemoScriptEngine implements ScriptEngine, Compilable {
 
     @Override
     public Object eval(String script, ScriptContext context)
@@ -92,6 +94,18 @@ public class MemoScriptEngine implements ScriptEngine{
 
     @Override
     public ScriptEngineFactory getFactory() {
+        // TODO Auto-generated method stub
+        throw new Error("unimplemented");
+    }
+
+    @Override
+    public CompiledScript compile(String script) throws ScriptException {
+        // TODO Auto-generated method stub
+        throw new Error("unimplemented");
+    }
+
+    @Override
+    public CompiledScript compile(Reader script) throws ScriptException {
         // TODO Auto-generated method stub
         throw new Error("unimplemented");
     }
