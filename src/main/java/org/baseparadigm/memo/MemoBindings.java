@@ -15,7 +15,7 @@ import org.baseparadigm.GraphDatum;
  * @contributor travis@traviswellman.com
  */
 public class MemoBindings implements Bindings {
-    protected Map<String, GraphDatum> backingMap = new HashMap<String, GraphDatum>();
+    protected final Map<String, Object> backingMap = new HashMap<String, Object>();
     
     @Override
     public int size() {
@@ -24,68 +24,67 @@ public class MemoBindings implements Bindings {
 
     @Override
     public boolean isEmpty() {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+        return backingMap.isEmpty();
     }
 
     @Override
     public boolean containsValue(Object value) {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+        return backingMap.containsValue(value);
     }
 
     @Override
     public void clear() {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+        backingMap.clear();
     }
 
     @Override
     public Set<String> keySet() {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+        return backingMap.keySet();
     }
 
     @Override
     public Collection<Object> values() {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+        return backingMap.values();
     }
 
     @Override
     public Set<java.util.Map.Entry<String, Object>> entrySet() {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+        return backingMap.entrySet();
     }
 
     @Override
     public Object put(String name, Object value) {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+        assert value instanceof GraphDatum;
+        return backingMap.put(name, value);
     }
 
     @Override
     public void putAll(Map<? extends String, ? extends Object> toMerge) {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+        assert allGraphData(toMerge.values());
+        backingMap.putAll(toMerge);
+    }
+    
+    private boolean allGraphData(Iterable<? extends Object> ite) {
+        for (Object obj : ite)
+            if (! (obj instanceof GraphDatum))
+                return false;
+        return true;
     }
 
     @Override
     public boolean containsKey(Object key) {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+        return backingMap.containsKey(key);
     }
 
     @Override
     public Object get(Object key) {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+        assert backingMap.get(key) instanceof GraphDatum;
+        return backingMap.get(key);
     }
 
     @Override
     public Object remove(Object key) {
-        // TODO Auto-generated method stub
-        throw new Error("unimplemented");
+        return backingMap.remove(key);
     }
 
 }
