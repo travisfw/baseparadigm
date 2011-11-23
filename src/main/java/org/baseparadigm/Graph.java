@@ -82,7 +82,7 @@ public class Graph extends SetDatum {
      */
     public void add(GraphDatum toIndex) {
         assert someEqual(repos, toIndex.bp);
-        ContentId theId = toIndex.id(); // id() is where toIndex gets stored in toIndex.bp
+        ContentId theId = toIndex.getId(); // id() is where toIndex gets stored in toIndex.bp
         for (Repo r : repos) // store in the rest of the repos too
             if (toIndex.bp != r) r.put(toIndex);
         // find possible subscriptions

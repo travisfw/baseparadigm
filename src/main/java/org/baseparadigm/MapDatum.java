@@ -335,7 +335,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     }
 
     public ContentId id = null;
-    public ContentId id() {
+    public ContentId getId() {
         if (id == null)
             id = bp.put(this);
         return id;
