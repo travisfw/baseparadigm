@@ -83,10 +83,18 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      * Adds the given item to the set at the ContentId for the key string.
      * @return this
      */
-    public MapDatum build(String key, byte[] item) {
+    public MapDatum build(String fieldName, byte[] item) {
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
-        put(bp.put(key.getBytes(Repo.defaultCharset)), item);
+        put(bp.put(fieldName.getBytes(Repo.defaultCharset)), item);
+        return this;
+    }
+
+    public MapDatum build(String fieldName, ContentId cid) {
+        if (! isMutable)
+            throw new UnsupportedOperationException("this DatumMap is immutable");
+        assert cid.bp == bp;
+        put(bp.put(fieldName.getBytes(Repo.defaultCharset)), cid);
         return this;
     }
     
@@ -116,6 +124,18 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      */
     public MapDatum build(MetadataFields field, ToByteArray byteSize) {
         return build(field.name(), byteSize.toByteArray());
+    }
+    
+    /**
+     * put what the ContentId resolves to into this MapDatum, whether that
+     *  means using the given ContentId, or resolving and reinserting into
+     *  the Repo for this MapDatum.
+     */
+    public MapDatum build(MetadataFields field, ContentId cid) {
+        if (cid.bp == bp)
+            return build(field.name(), cid);
+        else
+            return build(field.name(), cid.resolve());
     }
 
     /**
