@@ -81,10 +81,10 @@ public class Graph extends SetDatum {
      * @param toIndex
      */
     public void add(GraphDatum toIndex) {
-        assert someEqual(repos, toIndex.bp);
-        ContentId theId = toIndex.getId(); // id() is where toIndex gets stored in toIndex.bp
+        assert someEqual(repos, toIndex.repo);
+        ContentId theId = toIndex.getId(); // id() is where toIndex gets stored in toIndex.repo
         for (Repo r : repos) // store in the rest of the repos too
-            if (toIndex.bp != r) r.put(toIndex);
+            if (toIndex.repo != r) r.put(toIndex);
         // find possible subscriptions
         for (SubjectPredicateObject spoaap : SubjectPredicateObject.values() ) {
             // each value will become a keyword. well, not a word, but same concept.
@@ -113,7 +113,7 @@ public class Graph extends SetDatum {
      * Query results.
      */
     public Set<ContentId> query(GraphDatum query){
-        assert someEqual(repos, query.bp);
+        assert someEqual(repos, query.repo);
         Set<ContentId> ret = null;
         for (Map.Entry<ContentId, SetDatum> kv : query.entrySet()) {
             SubjectPredicateObject k = spoaapFor(kv.getKey());
@@ -158,18 +158,18 @@ public class Graph extends SetDatum {
      * If the key is one of the ids for spoaap, returns the appropriate spoaap, otherwise throws an IllegalArgumentException;
      */
     protected SubjectPredicateObject spoaapFor(ContentId key) {
-        assert someEqual(repos, key.bp);
-        if (key.equals(bp.SUBJECTSid))
+        assert someEqual(repos, key.repo);
+        if (key.equals(repo.SUBJECTSid))
             return SubjectPredicateObject.SUBJECTS;
-        if (key.equals(bp.PREDICATESid))
+        if (key.equals(repo.PREDICATESid))
             return SubjectPredicateObject.PREDICATES;
-        if (key.equals(bp.OBJECTSid))
+        if (key.equals(repo.OBJECTSid))
             return SubjectPredicateObject.OBJECTS;
-        if (key.equals(bp.AUTHORSid))
+        if (key.equals(repo.AUTHORSid))
             return SubjectPredicateObject.AUTHORS;
-        if (key.equals(bp.ASSUMPTIONSid))
+        if (key.equals(repo.ASSUMPTIONSid))
             return SubjectPredicateObject.ASSUMPTIONS;
-        if (key.equals(bp.PATTERNSid))
+        if (key.equals(repo.PATTERNSid))
             return SubjectPredicateObject.PATTERNS;
         throw new IllegalArgumentException("key is not a SubjectPredicateObject");
     }

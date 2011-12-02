@@ -53,7 +53,7 @@ public class RepoFs extends Repo {
 
     @Override
     public byte[] get(Object key) {
-        assert key instanceof ContentId && ((ContentId)key).bp == this;
+        assert key instanceof ContentId && ((ContentId)key).repo == this;
         InputStream is = null;
         try {
             is = new FileInputStream(fileName((ContentId) key));

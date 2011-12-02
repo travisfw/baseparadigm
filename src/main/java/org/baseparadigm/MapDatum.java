@@ -16,11 +16,11 @@ import java.util.TreeMap;
 
 public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     public SortedMap<ContentId, SetDatum> backingMap;
-    public Repo bp;
+    public Repo repo;
     private boolean modifyRepo = true;
     private boolean isMutable = true;
     public MapDatum(Repo repo, BigInteger datumId) {
-        this.bp = repo;
+        this.repo = repo;
         this.backingMap = Collections.unmodifiableSortedMap(toMap(repo, datumId));
     }
     
@@ -29,7 +29,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      * @param baseParadigm
      */
     public MapDatum(Repo baseParadigm) {
-        bp = baseParadigm;
+        repo = baseParadigm;
         backingMap = new TreeMap<ContentId, SetDatum>();
         isMutable = true;
     }
@@ -43,7 +43,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
         if (map.size() == 0)
             throw new IllegalStateException(
                     "MapDatum instances need to belong to a BaseParadigm instance, which cannot be inferred from an empty map.");
-        bp = map.keySet().iterator().next().bp;
+        repo = map.keySet().iterator().next().repo;
         backingMap = Collections.unmodifiableSortedMap(map);
         isMutable = false;
     }
@@ -52,7 +52,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      * Get the data for the content id and create a MapDatum from it.
      */
     public static MapDatum inflate(ContentId cid) {
-        return new MapDatum(toMap(cid.bp, cid));
+        return new MapDatum(toMap(cid.repo, cid));
     }
     
     /**
@@ -62,7 +62,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
         put(
-                new ContentId(bp, key.getBytes(Repo.defaultCharset))
+                new ContentId(repo, key.getBytes(Repo.defaultCharset))
                 , new BigInteger(""+ value).toByteArray()
                 );
         return this;
@@ -75,7 +75,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     public MapDatum build(String key, SetDatum data) {
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
-        put(bp.put(key.getBytes(Repo.defaultCharset)), data);
+        put(repo.put(key.getBytes(Repo.defaultCharset)), data);
         return this;
     }
 
@@ -86,15 +86,15 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     public MapDatum build(String fieldName, byte[] item) {
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
-        put(bp.put(fieldName.getBytes(Repo.defaultCharset)), item);
+        put(repo.put(fieldName.getBytes(Repo.defaultCharset)), item);
         return this;
     }
 
     public MapDatum build(String fieldName, ContentId cid) {
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
-        assert cid.bp == bp;
-        put(bp.put(fieldName.getBytes(Repo.defaultCharset)), cid);
+        assert cid.repo == repo;
+        put(repo.put(fieldName.getBytes(Repo.defaultCharset)), cid);
         return this;
     }
     
@@ -132,7 +132,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      *  the Repo for this MapDatum.
      */
     public MapDatum build(MetadataFields field, ContentId cid) {
-        if (cid.bp == bp)
+        if (cid.repo == repo)
             return build(field.name(), cid);
         else
             return build(field.name(), cid.resolve());
@@ -224,7 +224,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      */
     public SetDatum getField(MetadataFields field) {
         // TODO optimize
-        return get(bp.idFor(field.name().getBytes(Repo.defaultCharset)));
+        return get(repo.idFor(field.name().getBytes(Repo.defaultCharset)));
     }
     
     
@@ -252,8 +252,8 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     public SetDatum put(ContentId key, byte[] byteArray) {
         return put(key
                 , modifyRepo
-                ? bp.put(byteArray)
-                : bp.idFor(byteArray));
+                ? repo.put(byteArray)
+                : repo.idFor(byteArray));
     }
     
     /**
@@ -266,7 +266,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
             merged.add(val);
             return put(key, merged);
         }
-        replacing = new SetDatum(bp);
+        replacing = new SetDatum(repo);
         replacing.add(val);
         return put(key, replacing);
     }
@@ -302,15 +302,15 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
 
     @Override
     public byte[] toByteArray() {
-        byte[] ret = new byte[bp.keyLength *size() *2];
+        byte[] ret = new byte[repo.keyLength *size() *2];
         int offset = 0;
         for (Map.Entry<ContentId, SetDatum> entry : entrySet()) {
-            System.arraycopy(entry.getKey().toByteArray(), 0, ret, offset, bp.keyLength);
-            offset += bp.keyLength;
-            byte[] src = bp.put(new SetDatum(entry.getValue()).toByteArray()).toByteArray();
-            assert src.length == bp.keyLength;
-            System.arraycopy( src, 0, ret, offset, bp.keyLength);
-            offset += bp.keyLength;
+            System.arraycopy(entry.getKey().toByteArray(), 0, ret, offset, repo.keyLength);
+            offset += repo.keyLength;
+            byte[] src = repo.put(new SetDatum(entry.getValue()).toByteArray()).toByteArray();
+            assert src.length == repo.keyLength;
+            System.arraycopy( src, 0, ret, offset, repo.keyLength);
+            offset += repo.keyLength;
         }
         return ret;
     }
@@ -358,13 +358,13 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      * like put(ContentId, byte[])
      */
     public SetDatum put(String fieldName, byte[] byteArray) {
-        return put(bp.idFor(fieldName.getBytes(Repo.defaultCharset)), byteArray);
+        return put(repo.idFor(fieldName.getBytes(Repo.defaultCharset)), byteArray);
     }
 
     public ContentId id = null;
     public ContentId getId() {
         if (id == null)
-            id = bp.put(this);
+            id = repo.put(this);
         return id;
     }
 }

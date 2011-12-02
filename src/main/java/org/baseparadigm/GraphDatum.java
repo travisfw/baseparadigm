@@ -32,32 +32,32 @@ public class GraphDatum extends MapDatum {
      * This needs to be a complete MapDatum.
      */
     public GraphDatum(ContentId datumId) {
-        super(datumId.bp, datumId);
+        super(datumId.repo, datumId);
         assertContainsKeys();
     }
     
     // with assertions disabled this is a no-op
     private void assertContainsKeys() {
-        assert containsKey(bp.OBJECTSid);
-        assert containsKey(bp.PREDICATESid);
-        assert containsKey(bp.SUBJECTSid);
-        assert containsKey(bp.ASSUMPTIONSid);
-        assert containsKey(bp.AUTHORSid);
-        assert containsKey(bp.PATTERNSid);
+        assert containsKey(repo.OBJECTSid);
+        assert containsKey(repo.PREDICATESid);
+        assert containsKey(repo.SUBJECTSid);
+        assert containsKey(repo.ASSUMPTIONSid);
+        assert containsKey(repo.AUTHORSid);
+        assert containsKey(repo.PATTERNSid);
     }
     
     /**
      * A mutable GraphDatum; call buildFinish() to make immutable.
      */
-    public GraphDatum(Repo bp) {
-        super(bp);
+    public GraphDatum(Repo repo) {
+        super(repo);
     }
     
     /**
      * like MapDatum.put(ContentId, SetDatum)
      */
     public GraphDatum build(SubjectPredicateObject key, SetDatum data) {
-        super.put(bp.idFor(key), data);
+        super.put(repo.idFor(key), data);
         return this;
     }
     
@@ -67,7 +67,7 @@ public class GraphDatum extends MapDatum {
      * @return this
      */
     public GraphDatum build(SubjectPredicateObject key, ContentId datum) {
-        put(bp.idFor(key), datum);
+        put(repo.idFor(key), datum);
         return this;
     }
     
@@ -77,24 +77,24 @@ public class GraphDatum extends MapDatum {
      * @return this
      */
     public GraphDatum build(SubjectPredicateObject key, byte[] datum) {
-        put(bp.idFor(key), bp.put(datum));
+        put(repo.idFor(key), repo.put(datum));
         return this;
     }
     
     public SetDatum get(SubjectPredicateObject which) {
         switch (which) {
         case SUBJECTS:
-            return get(bp.SUBJECTSid);
+            return get(repo.SUBJECTSid);
         case PREDICATES:
-            return get(bp.PREDICATESid);
+            return get(repo.PREDICATESid);
         case OBJECTS:
-            return get(bp.OBJECTSid);
+            return get(repo.OBJECTSid);
         case AUTHORS:
-            return get(bp.AUTHORSid);
+            return get(repo.AUTHORSid);
         case ASSUMPTIONS:
-            return get(bp.ASSUMPTIONSid);
+            return get(repo.ASSUMPTIONSid);
         case PATTERNS:
-            return get(bp.PATTERNSid);
+            return get(repo.PATTERNSid);
         default:
             throw new Error("serious bug. all SubjectPredicateObject enumeration values not covered");
         }
@@ -133,7 +133,7 @@ public class GraphDatum extends MapDatum {
      */
     public Set<Pattern> getPatterns() {
         Set<Pattern> ret = new HashSet<Pattern>();
-        for (ContentId cid : get(bp.PATTERNSid))
+        for (ContentId cid : get(repo.PATTERNSid))
             ret.add(PatternInflator.inflat(cid));
         return ret;
     }

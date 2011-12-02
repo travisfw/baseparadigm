@@ -10,29 +10,29 @@ import java.math.BigInteger;
  *
  */
 public class ContentId extends BigInteger implements ToByteArray {
-    public final Repo bp;
+    public final Repo repo;
 
     private static final long serialVersionUID = 492010517573211305L;
 
     /**
      * Similar to new BigInteger(bytes);
      * 
-     * @param bp
+     * @param repo
      * The repo that defines the key length.
      * 
      * @param bytes
      * The integer number of the id in byte form.
      * This array should have the length of the key length for the BaseParadigm given.
      */
-    public ContentId(Repo bp, byte[] bytes) {
+    public ContentId(Repo repo, byte[] bytes) {
         super(bytes);
-        assert bp.keyLength == bytes.length;
-        this.bp = bp;
+        assert repo.keyLength == bytes.length;
+        this.repo = repo;
     }
 
-    public ContentId(Repo bp, BigInteger key) {
+    public ContentId(Repo repo, BigInteger key) {
         super(key.toByteArray());
-        this.bp = bp;
+        this.repo = repo;
     }
 
     /**
@@ -40,7 +40,7 @@ public class ContentId extends BigInteger implements ToByteArray {
      */
     @Override
     public byte[] toByteArray() {
-        byte[] ba = new byte[bp.keyLength];
+        byte[] ba = new byte[repo.keyLength];
         byte[] orig = super.toByteArray();
         if (ba.length < orig.length)
             throw new RuntimeException("Somehow you obtained an id bigger than your repo supports.");
@@ -53,10 +53,10 @@ public class ContentId extends BigInteger implements ToByteArray {
     }
 
     /**
-     * this.bp.get(this)
+     * this.repo.get(this)
      */
     public byte[] resolve() {
-        return bp.get(this);
+        return repo.get(this);
     }
     
     @Override
@@ -65,12 +65,12 @@ public class ContentId extends BigInteger implements ToByteArray {
             return o instanceof BigInteger
                     && o.equals(this);
         return o instanceof ContentId
-                && ((ContentId)o).bp == this.bp
+                && ((ContentId)o).repo == this.repo
                 && super.equals(o);
     }
     
     @Override
     public ContentId clone() {
-        return new ContentId(bp, toByteArray());
+        return new ContentId(repo, toByteArray());
     }
 }

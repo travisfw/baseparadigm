@@ -27,7 +27,7 @@ import java.util.TreeSet;
 public class SetDatum implements SortedSet<ContentId>, ToByteArray{
     public static SetDatum empty = new SetDatum(Repo.commons).buildFinish();
     public SortedSet<ContentId> backingSet = null;
-    public Repo bp = null;
+    public Repo repo = null;
     public boolean isMutable = false;
     
     /**
@@ -37,7 +37,7 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray{
      * an id that should point to a set in the given repo.
      */
     public SetDatum(Repo repo, BigInteger datumId) {
-        this.bp = repo;
+        this.repo = repo;
         this.backingSet = Collections.unmodifiableSortedSet(toSet(repo, datumId));
         isMutable = false;
     }
@@ -49,7 +49,7 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray{
      */
     public SetDatum(Repo repo, Set<URI> uris) {
         backingSet = new TreeSet<ContentId>();
-        this.bp = repo;
+        this.repo = repo;
         try {
             for (URI uri : uris)
                 backingSet.add(repo.put(uri.toString().getBytes("UTF8")));
@@ -63,7 +63,7 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray{
      * @param repo
      */
     public SetDatum(Repo repo) {
-        this.bp = repo;
+        this.repo = repo;
         this.backingSet = new TreeSet<ContentId>();
         isMutable = true;
     }
@@ -75,7 +75,7 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray{
     public SetDatum(SortedSet<ContentId> value) {
         // obviously this will throw an exception if the set is empty.
         // in that case another constructor should be used.
-        bp = value.iterator().next().bp;
+        repo = value.iterator().next().repo;
         backingSet = Collections.unmodifiableSortedSet(value);
         isMutable = false;
     }
@@ -90,7 +90,7 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray{
     public SetDatum(SortedSet<ContentId> value, boolean isMutable) {
         // obviously this will throw an exception if the set is empty.
         // in that case another constructor should be used.
-        bp = value.iterator().next().bp;
+        repo = value.iterator().next().repo;
         this.isMutable = isMutable;
         backingSet = (isMutable
                 ? value
@@ -108,7 +108,7 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray{
      * the instance called.
      */
     public SetDatum build(URI uri) {
-        add( bp.put(
+        add( repo.put(
                 uri.toString().getBytes(Repo.defaultCharset)
                 ));
         return this;
@@ -122,12 +122,12 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray{
     }
 
     public SetDatum build(byte[] byteArray) {
-        add(bp.put(byteArray));
+        add(repo.put(byteArray));
         return this;
     }
 
-    public static SetDatum fromData(Repo bp2, Set<? extends ToByteArray> graphData) {
-        SetDatum ret = new SetDatum(bp2);
+    public static SetDatum fromData(Repo repo2, Set<? extends ToByteArray> graphData) {
+        SetDatum ret = new SetDatum(repo2);
         ret.addAll(graphData);
         return ret;
     }
@@ -167,7 +167,7 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray{
      * Get the data for the content id and create a SetDatum from it.
      */
     public static SetDatum inflate(ContentId cid) {
-        return new SetDatum(toSet(cid.bp, cid));
+        return new SetDatum(toSet(cid.repo, cid));
     }
 
     @Override
@@ -239,16 +239,16 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray{
         if (isEmpty())
             return new byte[0];
         int keyLength;
-        if (bp == null) {
+        if (repo == null) {
             ContentId containedId = backingSet.iterator().next();
-            if (containedId.bp == null)
+            if (containedId.repo == null)
                 keyLength = containedId.toByteArray().length;
-            else keyLength = containedId.bp.keyLength;
-        } else keyLength = bp.keyLength;
+            else keyLength = containedId.repo.keyLength;
+        } else keyLength = repo.keyLength;
         byte[] ret = new byte[keyLength *size()];
         int offset = 0;
         for (ContentId i : this) {
-            assert i.bp.keyLength == keyLength;
+            assert i.repo.keyLength == keyLength;
             System.arraycopy(i.toByteArray(), 0, ret, offset, keyLength);
             offset += keyLength;
         }

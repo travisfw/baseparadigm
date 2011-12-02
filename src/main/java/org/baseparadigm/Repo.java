@@ -164,7 +164,7 @@ public class Repo implements Map<ContentId, byte[]>{
     }
     @Override
     public byte[] get(Object key) {
-        assert key instanceof ContentId && ((ContentId)key).bp == this;
+        assert key instanceof ContentId && ((ContentId)key).repo == this;
         return this.map.get(key);
     }
     
