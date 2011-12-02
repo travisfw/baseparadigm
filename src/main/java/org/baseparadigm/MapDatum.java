@@ -98,17 +98,24 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     }
 
     /**
-     * build(type.fieldName, string.getBytes())
+     * build(field.name(), string.getBytes())
      */
-    public MapDatum build(MetadataFields type, String string) {
-        return build(type.name(), string.getBytes());
+    public MapDatum build(MetadataFields field, String string) {
+        return build(field.name(), string.getBytes());
     }
 
     /**
-     * build(content.fieldName, bytes)
+     * build(content.name(), bytes)
      */
-    public MapDatum build(MetadataFields content, byte[] bytes) {
-        return build(content.name(), bytes);
+    public MapDatum build(MetadataFields field, byte[] bytes) {
+        return build(field.name(), bytes);
+    }
+    
+    /**
+     * build(field.name(), byteSize.toByteArray())
+     */
+    public MapDatum build(MetadataFields field, ToByteArray byteSize) {
+        return build(field.name(), byteSize.toByteArray());
     }
 
     /**
