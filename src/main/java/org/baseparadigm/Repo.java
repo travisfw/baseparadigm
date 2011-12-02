@@ -309,4 +309,8 @@ public class Repo implements Map<ContentId, byte[]>{
         }
     }
     
+    public Charset getCharset() {
+        return defaultCharset;
+    }
+    
 }

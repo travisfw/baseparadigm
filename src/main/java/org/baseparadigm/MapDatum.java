@@ -62,7 +62,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
         put(
-                new ContentId(repo, key.getBytes(Repo.defaultCharset))
+                new ContentId(repo, key.getBytes(repo.getCharset()))
                 , new BigInteger(""+ value).toByteArray()
                 );
         return this;
@@ -75,7 +75,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     public MapDatum build(String key, SetDatum data) {
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
-        put(repo.put(key.getBytes(Repo.defaultCharset)), data);
+        put(repo.put(key.getBytes(repo.getCharset())), data);
         return this;
     }
 
@@ -86,7 +86,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
     public MapDatum build(String fieldName, byte[] item) {
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
-        put(repo.put(fieldName.getBytes(Repo.defaultCharset)), item);
+        put(repo.put(fieldName.getBytes(repo.getCharset())), item);
         return this;
     }
 
@@ -94,7 +94,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
         if (! isMutable)
             throw new UnsupportedOperationException("this DatumMap is immutable");
         assert cid.repo == repo;
-        put(repo.put(fieldName.getBytes(Repo.defaultCharset)), cid);
+        put(repo.put(fieldName.getBytes(repo.getCharset())), cid);
         return this;
     }
     
@@ -142,7 +142,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      * like build(MetadataFields.TYPE, byte[])
      */
     public GraphDatum buildType(TypeValues tv) {
-        return (GraphDatum) build(MetadataFields.TYPE, tv.name().getBytes(Repo.defaultCharset));
+        return (GraphDatum) build(MetadataFields.TYPE, tv.name().getBytes(repo.getCharset()));
     }
 
     /**
@@ -224,7 +224,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      */
     public SetDatum getField(MetadataFields field) {
         // TODO optimize
-        return get(repo.idFor(field.name().getBytes(Repo.defaultCharset)));
+        return get(repo.idFor(field.name().getBytes(repo.getCharset())));
     }
     
     
@@ -358,7 +358,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      * like put(ContentId, byte[])
      */
     public SetDatum put(String fieldName, byte[] byteArray) {
-        return put(repo.idFor(fieldName.getBytes(Repo.defaultCharset)), byteArray);
+        return put(repo.idFor(fieldName.getBytes(repo.getCharset())), byteArray);
     }
 
     public ContentId id = null;
