@@ -17,4 +17,13 @@ public class Util {
         assert is.read() == -1;
         return baos.toByteArray();
     }
+    
+    /**
+     * create a basic metadata document around raw content containing its type
+     */
+    public static MapDatum metaType(ContentId cid, TypeValues type) {
+        return new MapDatum(cid.repo)
+        .build(MetadataFields.CONTENT, cid)
+        .build(MetadataFields.TYPE, type);
+    }
 }
