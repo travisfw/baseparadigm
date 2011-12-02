@@ -20,7 +20,7 @@ public class RepoFs extends Repo {
         this.storageDir = storageDir;
     }
     
-    private File fileName(ContentId key) {
+    public File fileName(ContentId key) {
         // add maxrange to remove negative values, then get the hex string
         String filename = key.add(maxRange).toString(32);
         File pdir = new File(storageDir, filename.substring(0, 3));
