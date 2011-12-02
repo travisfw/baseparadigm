@@ -80,6 +80,10 @@ public class GraphDatum extends MapDatum {
         put(repo.idFor(key), repo.put(datum));
         return this;
     }
+    public GraphDatum build(SubjectPredicateObject key, ToByteArray datum) {
+        put(repo.idFor(key), repo.put(datum.toByteArray()));
+        return this;
+    }
     
     public SetDatum get(SubjectPredicateObject which) {
         switch (which) {
