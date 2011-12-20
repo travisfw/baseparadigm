@@ -1,6 +1,7 @@
 package org.baseparadigm;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
 
 /**
@@ -31,8 +32,26 @@ public class ContentId extends BigInteger implements ToByteArray {
     }
 
     public ContentId(Repo repo, BigInteger key) {
-        super(key.toByteArray());
+        super(key.toByteArray());	
+        assert key.toByteArray().length <= repo.keyLength;
         this.repo = repo;
+    }
+    
+    private static boolean allZeroes(byte[] ba) {
+    	for (byte b : ba)
+    		if (b != 0)
+    			return false;
+    	return true;
+    }
+    
+    // static because the constructor uses it to call super
+    // ie, the repo property on ContentID instances is not yet set
+    private static byte[] pad(Repo repo, byte[] padBytes) {
+    	byte[] keyBytes = new byte[repo.keyLength];
+    	assert allZeroes(keyBytes) :
+    		"this java implementation fills new byte arrays with: "+ keyBytes[0];
+    	System.arraycopy(padBytes, 0, keyBytes, keyBytes.length -padBytes.length, padBytes.length);
+        return keyBytes;
     }
 
     /**
@@ -40,14 +59,11 @@ public class ContentId extends BigInteger implements ToByteArray {
      */
     @Override
     public byte[] toByteArray() {
-        byte[] ba = new byte[repo.keyLength];
         byte[] orig = super.toByteArray();
-        if (ba.length < orig.length)
+        if (repo.keyLength < orig.length)
             throw new RuntimeException("Somehow you obtained an id bigger than your repo supports.");
-        // ba.length > orig.length
-        // the expected case where the random number is simply small and needs to be left padded.
-        // there is a > 1/256 chance of this for every id
-        System.arraycopy(orig, 0, ba, ba.length -orig.length, orig.length);
+        // there is a > 1/256 chance of padding being necessary
+        byte[] ba = pad(repo, orig);
         assert super.equals(new BigInteger(ba));
         return ba;
     }
