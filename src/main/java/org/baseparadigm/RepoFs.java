@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 
 public class RepoFs extends Repo {
     public File storageDir;
@@ -69,5 +70,11 @@ public class RepoFs extends Repo {
             }
         }
         return null;
+    }
+
+    public byte[] getBase32(String key) {
+	// subtract maxRange because base32 is unsigned
+	return get(new ContentId(this,
+		new BigInteger(key, 32).subtract(maxRange)));
     }
 }
