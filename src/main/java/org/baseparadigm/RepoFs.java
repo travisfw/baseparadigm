@@ -54,11 +54,16 @@ public class RepoFs extends Repo {
 
     @Override
     public byte[] get(Object key) {
-        assert key instanceof ContentId && ((ContentId)key).repo == this;
+        assert key instanceof ContentId;
+        ContentId cid = (ContentId) key;
+        assert cid.repo == this;
         InputStream is = null;
         try {
-            is = new FileInputStream(fileName((ContentId) key));
+            is = new FileInputStream(fileName(cid));
             return Util.drain(is);
+        } catch (FileNotFoundException fnfe) {
+            // per the contract for a Map when there is no mapping for the key
+            return null;
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
