@@ -27,6 +27,7 @@ public class Repo implements Map<ContentId, byte[]>{
      * Subclasses change this if you implement a new id algorithm with a different range of possible values.
      */
     public static final BigInteger maxRange = new BigInteger("6677614145500822869199612450086833169372076310647976309689773738637898163997413592367992297518418569869153121528171484150693110263204762287047346759892863");
+    public BigInteger getMaxRange() { return maxRange; }
 //    public static final BigInteger minRange = new BigInteger("-6677614145500822869199612450086833169372076310647976309689773738637898163997413592367992297518418569869153121528171484150693110263204762287047346759892864");
     public static final Charset defaultCharset = Charset.forName("UTF8");
     public static Repo commons;

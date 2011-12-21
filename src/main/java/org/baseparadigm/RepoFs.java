@@ -21,9 +21,11 @@ public class RepoFs extends Repo {
         this.storageDir = storageDir;
     }
     
+    public static int stringKeyRadix = 32;
+    
     public File fileName(ContentId key) {
-        // add maxrange to remove negative values, then get the hex string
-        String filename = key.add(maxRange).toString(32);
+        // add maxrange to remove negative values
+        String filename = key.add(maxRange).toString(stringKeyRadix);
         File pdir = new File(storageDir, filename.substring(0, 3));
         pdir.mkdirs();
         return new File(pdir, filename);
@@ -77,9 +79,16 @@ public class RepoFs extends Repo {
         return null;
     }
 
-    public byte[] getBase32(String key) {
+    /**
+     * retrieve is like get but using strings in base this.stringKeyRadix
+     * @param key
+     * the base this.stringKeyRadix positive integer representation of the binary key
+     * @return
+     * see get(Object)
+     */
+    public byte[] retrieve(String key) {
 	// subtract maxRange because base32 is unsigned
 	return get(new ContentId(this,
-		new BigInteger(key, 32).subtract(maxRange)));
+		new BigInteger(key, stringKeyRadix).subtract(maxRange)));
     }
 }

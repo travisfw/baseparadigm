@@ -24,7 +24,7 @@ import java.util.TreeSet;
  * @author travis@traviswellman.com
  *
  */
-public class SetDatum implements SortedSet<ContentId>, ToByteArray{
+public class SetDatum implements SortedSet<ContentId>, ToByteArray {
     public static SetDatum empty = new SetDatum(Repo.commons).buildFinish();
     public SortedSet<ContentId> backingSet = null;
     public Repo repo = null;
