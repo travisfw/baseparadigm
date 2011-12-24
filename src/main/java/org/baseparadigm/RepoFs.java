@@ -7,25 +7,24 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 
 public class RepoFs extends Repo {
     public File storageDir;
+    private Namer namer;
     public File getStorageDir() {return storageDir;}
     
-    public RepoFs(File storageDir) {
+    public RepoFs(File storageDir, Namer n) {
         super();
+        this.namer = n;
         if (! storageDir.mkdirs())
             if (! storageDir.exists())
                 throw new RuntimeException("can't use "+ storageDir.getAbsolutePath());
         this.storageDir = storageDir;
     }
     
-    public static int stringKeyRadix = 32;
-    
     public File fileName(ContentId key) {
-        // add maxrange to remove negative values
-        String filename = key.add(maxRange).toString(stringKeyRadix);
+        String filename = namer.name(key.toByteArray());
+        assert filename.length() >= 3;
         File pdir = new File(storageDir, filename.substring(0, 3));
         pdir.mkdirs();
         return new File(pdir, filename);
@@ -56,8 +55,11 @@ public class RepoFs extends Repo {
 
     @Override
     public byte[] get(Object key) {
-        assert key instanceof ContentId;
-        ContentId cid = (ContentId) key;
+        ContentId cid;
+        if (key instanceof String)
+            cid = new ContentId(this, namer.reverse((String)key));
+        else
+            cid = (ContentId)key; // class cast exceptions here are good
         assert cid.repo == this;
         InputStream is = null;
         try {
@@ -78,17 +80,12 @@ public class RepoFs extends Repo {
         }
         return null;
     }
-
+    
     /**
-     * retrieve is like get but using strings in base this.stringKeyRadix
-     * @param key
-     * the base this.stringKeyRadix positive integer representation of the binary key
-     * @return
-     * see get(Object)
+     * A repo storing data in files needs to be told what to name the files.
      */
-    public byte[] retrieve(String key) {
-	// subtract maxRange because base32 is unsigned
-	return get(new ContentId(this,
-		new BigInteger(key, stringKeyRadix).subtract(maxRange)));
+    public static interface Namer {
+        public String name(byte[] cid);
+        public byte[] reverse(String cid);
     }
 }
