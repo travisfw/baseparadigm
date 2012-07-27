@@ -9,7 +9,7 @@ public enum MetadataFields {
      *  one that works for you. 
      */
     DATA_RENDERER
-            
+    
     /**
      * most metadata documents would have a "content" field containing the ids of actual bytes. 
      */

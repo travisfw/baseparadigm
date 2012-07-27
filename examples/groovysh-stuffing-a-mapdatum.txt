@@ -1,0 +1,46 @@
+travis BaseParadigm groovysh
+Groovy Shell (1.8.6, JVM: 1.7.0_03-icedtea)
+Type 'help' or '\h' for help.
+--------------------------------------------------------------------------------------------------------------
+groovy:000> import groovy.grape.Grape                                                 
+===> [import groovy.grape.Grape]
+groovy:000> Grape.grab([group:'spaciousness', module:'baseparadigm', version:'0.4.2'])
+===> null
+groovy:000> import org.baseparadigm.*                                                 
+===> [import groovy.grape.Grape, import org.baseparadigm.*]
+groovy:000> md = new MapDatum(CommonsCidScheme.getInstance())                         
+===> org.baseparadigm.MapDatum@5dace6a3
+groovy:000> r = new BasicRepo(new FileSystemStore())                                  
+===> org.baseparadigm.BasicRepo@37dd1435
+groovy:000> md.build('key', 'value')                                                  
+===> org.baseparadigm.MapDatum@5dace6a3
+groovy:000> md.size()
+===> 1
+groovy:000> s = md.stuff(r, r.getCidScheme())
+ERROR org.baseparadigm.NotInRepoException:
+8335FA56D487562DE248F47BEFC72743334051DDFFCC2C09275F665454990317594745EE17C08F798CD7DCE0BA8155DCDA14F6398C1D1545116520A133017C09
+        at org.baseparadigm.Util.repoGet (Util.java:189)
+        at org.baseparadigm.MapDatum.stuff (MapDatum.java:402)
+        at org.baseparadigm.i.Stuffable$stuff.call (Unknown Source)
+        at groovysh_evaluate.run (groovysh_evaluate:4)
+        ...
+groovy:000> keyCid = r.put('key'.getBytes())
+===> 8335FA56D487562DE248F47BEFC72743334051DDFFCC2C09275F665454990317594745EE17C08F798CD7DCE0BA8155DCDA14F6398C1D1545116520A133017C09
+groovy:000> r.put('value'.getBytes())
+===> EC2C83EDECB60304D154EBDB85BDFAF61A92BD142E71C4F7B25A15B9CB5F3C0AE301CFB3569CF240E4470031385348BC296D8D99D09E06B26F09591A97527296
+groovy:000> s = md.stuff(r, r.getCidScheme())
+===> org.baseparadigm.VirtualRepoBackedStuffed@19845f72
+groovy:000> s.vr.stuff.size()                                                         
+===> 3
+groovy:000> mup = new MapDatum(s)
+===> org.baseparadigm.MapDatum@316c4f11
+groovy:000> mup.size()
+===> 1
+groovy:000> mup.get(keyCid)
+===> org.baseparadigm.SetDatum@6f28deae
+groovy:000> mup.get(keyCid).iterator().next()
+===> EC2C83EDECB60304D154EBDB85BDFAF61A92BD142E71C4F7B25A15B9CB5F3C0AE301CFB3569CF240E4470031385348BC296D8D99D09E06B26F09591A97527296
+groovy:000> r.get(mup.get(keyCid).iterator().next())
+===> [B@b4d241d
+groovy:000> new String(r.get(mup.get(keyCid).iterator().next()))
+===> value

@@ -2,13 +2,13 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.spaciousness</groupId>
+  <groupId>spaciousness</groupId>
   <artifactId>baseparadigm</artifactId>
-  <version>0.1</version>
+  <version>0.4.2</version>
   <packaging>jar</packaging>
 
   <name>baseparadigm</name>
-  <url>http://maven.apache.org</url>
+  <url>http://baseparadigm.org/</url>
 
   <build>
     <plugins>
@@ -17,9 +17,23 @@
 	<artifactId>maven-compiler-plugin</artifactId>
 	<version>2.3.2</version>
 	<configuration>
-	  <source>1.6</source>
-	  <target>1.6</target>
+	  <source>1.7</source>
+	  <target>1.7</target>
 	</configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>2.1.2</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

@@ -1,115 +1,95 @@
 package org.baseparadigm;
 
-import java.math.BigInteger;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeMap;
+
+import org.baseparadigm.i.CidScheme;
+import org.baseparadigm.i.ContentId;
+import org.baseparadigm.i.Repo;
+import org.baseparadigm.i.Stuffed;
 
 
 /**
- * A GraphDatum provides access to the fields enumerated in SubjectPredicateObject.
+ * A GraphDatum is a {@link MapDatum} that provides access to the fields
+ * enumerated in {@link SubjectPredicateObject} more efficiently. Being a
+ * MapDatum, a GraphDatum (aka "graph edge" or "edge document") may contain
+ * fields other than the six: SUBJECTS, PREDICATES, OBJECTS, AUTHORS,
+ * ASSUMPTIONS, PATTERNS. One such field which will commonly be present is
+ * SIGNATURES which will contain nodes verifying the authorship of the values of
+ * AUTHORS.
  * 
  */
 public class GraphDatum extends MapDatum {
     /**
      * Construct an immutable GraphDatum.
      * 
-     * @param repo
-     * A BaseParadigm repo to back this GraphDatum.
-     * 
-     * @param datumId
-     * This needs to be a complete MapDatum already contained in the given repo.
+     * @param datumId reference to a serialized graph edge
      */
-    public GraphDatum(Repo repo, BigInteger datumId) {
-        super(repo, datumId);
-        assertContainsKeys();
-    }
-    
-    /**
-     * Same as public GraphDatum(BaseParadigm repo, BigInteger datumId)
-     * but the ContentId specifies the repo.
-     * 
-     * @param datumId
-     * This needs to be a complete MapDatum.
-     */
-    public GraphDatum(ContentId datumId) {
-        super(datumId.repo, datumId);
-        assertContainsKeys();
-    }
-    
-    // with assertions disabled this is a no-op
-    private void assertContainsKeys() {
-        assert containsKey(repo.OBJECTSid);
-        assert containsKey(repo.PREDICATESid);
-        assert containsKey(repo.SUBJECTSid);
-        assert containsKey(repo.ASSUMPTIONSid);
-        assert containsKey(repo.AUTHORSid);
-        assert containsKey(repo.PATTERNSid);
+    public GraphDatum(Repo r, ContentId datumId) {
+        super(r, datumId);
     }
     
     /**
      * A mutable GraphDatum; call buildFinish() to make immutable.
      */
-    public GraphDatum(Repo repo) {
-        super(repo);
+    public GraphDatum(CidScheme scheme) {
+        super(scheme);
+    }
+    
+    public GraphDatum(CidScheme cids, TreeMap<ContentId, SetDatum> newBackingMap, boolean isMutable) {
+        super(cids, newBackingMap, isMutable);
     }
     
     /**
-     * like MapDatum.put(ContentId, SetDatum)
+     * if you're initializing using a {@link Stuffed}
      */
-    public GraphDatum build(SubjectPredicateObject key, SetDatum data) {
-        super.put(repo.idFor(key), data);
-        return this;
+    public GraphDatum(Stuffed stuffed) {
+        super();
+        init(stuffed);
     }
     
+    /**
+     * like {@link MapDatum#build(ContentId, SetDatum)}
+     */
+    public GraphDatum build(SubjectPredicateObject key, SetDatum data) {
+        return (GraphDatum) super.build(cidScheme.keyFor(key.name().getBytes(Util.defaultCharset)), data);
+    }
     /**
      * Add the ContentId to the set of values at this key. Does not replace.
      * 
      * @return this
      */
     public GraphDatum build(SubjectPredicateObject key, ContentId datum) {
-        put(repo.idFor(key), datum);
-        return this;
-    }
-    
-    /**
-     * Put the byte array into the set of values at this key. Does not replace.
-     * 
-     * @return this
-     */
-    public GraphDatum build(SubjectPredicateObject key, byte[] datum) {
-        put(repo.idFor(key), repo.put(datum));
-        return this;
-    }
-    public GraphDatum build(SubjectPredicateObject key, ToByteArray datum) {
-        put(repo.idFor(key), repo.put(datum.toByteArray()));
-        return this;
+        return (GraphDatum) super.build(cidScheme.keyFor(key.name().getBytes(Util.defaultCharset)), datum);
     }
     
     public SetDatum get(SubjectPredicateObject which) {
-        switch (which) {
-        case SUBJECTS:
-            return get(repo.SUBJECTSid);
-        case PREDICATES:
-            return get(repo.PREDICATESid);
-        case OBJECTS:
-            return get(repo.OBJECTSid);
-        case AUTHORS:
-            return get(repo.AUTHORSid);
-        case ASSUMPTIONS:
-            return get(repo.ASSUMPTIONSid);
-        case PATTERNS:
-            return get(repo.PATTERNSid);
-        default:
-            throw new Error("serious bug. all SubjectPredicateObject enumeration values not covered");
-        }
+        return get(cidScheme.keyFor(which.name().getBytes(Util.defaultCharset)));
+        // optimization to be considered
+//        switch (which) {
+//        case SUBJECTS:
+//            return get(repo.SUBJECTSid);
+//        case PREDICATES:
+//            return get(repo.PREDICATESid);
+//        case OBJECTS:
+//            return get(repo.OBJECTSid);
+//        case AUTHORS:
+//            return get(repo.AUTHORSid);
+//        case ASSUMPTIONS:
+//            return get(repo.ASSUMPTIONSid);
+//        case PATTERNS:
+//            return get(repo.PATTERNSid);
+//        default:
+//            throw new Error("serious bug. all SubjectPredicateObject enumeration values not covered");
+//        }
     }
 
     /**
      * @param g
-     * A GraphDatum that could be a subset of this one.
+     *            A GraphDatum that could be a subset of this one.
      * 
-     * @return
-     * true if each aaspo contains all of the ids the respective aaspo of the given graphdatum contains.
+     * @return true if each spoaap contains all of the ids the respective spoaap
+     *         of the given graphdatum contains.
      */
     public boolean isSupersetOf(GraphDatum g) {
         for (SubjectPredicateObject i : SubjectPredicateObject.values())
@@ -131,16 +111,10 @@ public class GraphDatum extends MapDatum {
                 return true;
         return false;
     }
-
-    /**
-     * Convenience for getting the PATTERNS field and turning each into a GraphData manually.
-     */
-    public Set<Pattern> getPatterns() {
-        Set<Pattern> ret = new HashSet<Pattern>();
-        for (ContentId cid : get(repo.PATTERNSid))
-            ret.add(PatternInflator.inflat(cid));
-        return ret;
+    
+    @Override
+    public Object clone() {
+        TreeMap<ContentId, SetDatum> newBackingMap = new TreeMap<ContentId, SetDatum>(backingMap);
+        return new GraphDatum(cidScheme, newBackingMap, isMutable);
     }
-    
-    
 }

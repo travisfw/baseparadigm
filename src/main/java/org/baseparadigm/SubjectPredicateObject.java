@@ -2,13 +2,13 @@ package org.baseparadigm;
 
 
 /**
- * SubjectPredicateObject enumerates the fields of a GraphDatum.
- * Every value of a field is a set (SetDatum) of metadata blobs (MapDatum)
+ * SubjectPredicateObject enumerates the fields of a {@link GraphDatum}.
+ * Every value of a field is a set ( {@link SetDatum}) of metadata blobs ( {@link MapDatum})
  *  whose <i>content</i> field contains what is described as the meaning of
  *  each field in SubjectPredicateObject.
  * Obviously GraphData are not just triples.
- * So a bppath to the first positives from a GraphDatum woulb be something like this:
- * "gdObject/PATTERNS/0/content/positives"
+ * So a bppath to the first positives from a GraphDatum would be something like this:
+ * "gdObject/PATTERNS/0/positives/*"
  * @author travis@traviswellman.com
  *
  */
@@ -43,7 +43,10 @@ public enum SubjectPredicateObject {
     ASSUMPTIONS(),
     
     /**
-     * Queries which this edge would be returned within a request for.
+     * Queries which this edge would be returned within a request for, and which
+     * may return edges the viewer may be interested in looking at next. If
+     * ASSUMPTIONS is past, PATTERNS is future.
      */
-    PATTERNS();
+    PATTERNS()
+
 }

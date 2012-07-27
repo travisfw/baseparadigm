@@ -1,8 +1,11 @@
 package org.baseparadigm;
 
+import org.baseparadigm.i.ToByteArray;
+
 
 public enum TypeValues implements ToByteArray {
-    RAW, URI, PATTERN, TEXT;
+    RAW, URI, PATTERN, TEXT,
+    GPG_SIGNATURE;
 
     @Override
     public byte[] toByteArray() {

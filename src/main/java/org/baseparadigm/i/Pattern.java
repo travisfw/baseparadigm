@@ -1,6 +1,9 @@
-package org.baseparadigm;
+package org.baseparadigm.i;
 
 import java.util.Iterator;
+
+import org.baseparadigm.GraphData;
+import org.baseparadigm.GraphDatum;
 
 /** 
  * @author travis@traviswellman.com

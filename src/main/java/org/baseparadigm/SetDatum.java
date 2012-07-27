@@ -3,8 +3,6 @@ package org.baseparadigm;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,6 +11,17 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import org.baseparadigm.i.CidScheme;
+import org.baseparadigm.i.ContentId;
+import org.baseparadigm.i.HasContentId;
+import org.baseparadigm.i.Repo;
+import org.baseparadigm.i.ResolvableId;
+import org.baseparadigm.i.Stuffable;
+import org.baseparadigm.i.Stuffed;
+import org.baseparadigm.i.ToByteArray;
+
+import static org.baseparadigm.Util.repoGet;
 
 /**
  * DatumSet and DatumMap are core elements of the BaseParadigm data model.
@@ -24,48 +33,64 @@ import java.util.TreeSet;
  * @author travis@traviswellman.com
  *
  */
-public class SetDatum implements SortedSet<ContentId>, ToByteArray {
-    public static SetDatum empty = new SetDatum(Repo.commons).buildFinish();
+public class SetDatum implements SortedSet<ContentId>, ToByteArray, HasContentId, Stuffable, Cloneable {
+    public static SetDatum empty = new SetDatum(NullCidScheme.instance()).buildFinish();
     public SortedSet<ContentId> backingSet = null;
-    public Repo repo = null;
-    public boolean isMutable = false;
+    public CidScheme cidScheme;
+    private ResolvableId cachedId = null;
+
+    private boolean isMutable = false;
+    private boolean initialized = false;
     
     /**
-     * Constructs an immutable representation of the set given by the datumId.
-     * @param repo
-     * @param datumId
-     * an id that should point to a set in the given repo.
+     * Constructs an immutable representation of what was previously stuffed.
+     * @param stuffed from {@link SetDatum#stuff(Repo)}
+     * @throws NotInRepoException 
      */
-    public SetDatum(Repo repo, BigInteger datumId) {
-        this.repo = repo;
-        this.backingSet = Collections.unmodifiableSortedSet(toSet(repo, datumId));
+    public SetDatum(Stuffed stuffed) {
+        this.cidScheme = stuffed.getCidScheme();
         isMutable = false;
+        initialized = false;
+        init(stuffed);
+        assert backingSet != null;
+        assert initialized == true;
     }
     
     /**
-     * Inserts the given URIs into the given repo and constructs a Set of ids for them; immutable.
-     * @param repo
+     * immutable set of content ids given the scheme.
+     * @param cids
      * @param uris
      */
-    public SetDatum(Repo repo, Set<URI> uris) {
+    public SetDatum(CidScheme cids, Set<URI> uris) {
         backingSet = new TreeSet<ContentId>();
-        this.repo = repo;
-        try {
-            for (URI uri : uris)
-                backingSet.add(repo.put(uri.toString().getBytes("UTF8")));
-        } catch (UnsupportedEncodingException e) { throw new Error(e); }
+        this.cidScheme = cids;
+        for (URI uri : uris)
+            backingSet.add(cids.keyFor(uri.toString().getBytes(Util.defaultCharset)));
         isMutable = false;
         backingSet = Collections.unmodifiableSortedSet(backingSet);
+        initialized = true;
     }
     
     /**
      * Mutable
-     * @param repo
+     * @param cids
      */
-    public SetDatum(Repo repo) {
-        this.repo = repo;
+    public SetDatum(CidScheme cids) {
+        this.cidScheme = cids;
         this.backingSet = new TreeSet<ContentId>();
         isMutable = true;
+        initialized = true;
+    }
+    
+    /**
+     * Same as {@link SetDatum#SetDatum(CidScheme)} where the {@link CidScheme} is taken from the {@link Repo} given.
+     * @param cidScheme
+     */
+    public SetDatum(Repo repo) {
+        this.cidScheme = repo.getCidScheme();
+        this.backingSet = new TreeSet<ContentId>();
+        isMutable = true;
+        initialized = true;
     }
     
     /**
@@ -75,9 +100,10 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray {
     public SetDatum(SortedSet<ContentId> value) {
         // obviously this will throw an exception if the set is empty.
         // in that case another constructor should be used.
-        repo = value.iterator().next().repo;
+        cidScheme = value.iterator().next().getCidScheme();
         backingSet = Collections.unmodifiableSortedSet(value);
         isMutable = false;
+        initialized = true;
     }
     
     /**
@@ -90,103 +116,130 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray {
     public SetDatum(SortedSet<ContentId> value, boolean isMutable) {
         // obviously this will throw an exception if the set is empty.
         // in that case another constructor should be used.
-        repo = value.iterator().next().repo;
+        cidScheme = value.iterator().next().getCidScheme();
         this.isMutable = isMutable;
         backingSet = (isMutable
-                ? value
+                ? new TreeSet<ContentId>(value)
                 : Collections.unmodifiableSortedSet(new TreeSet<ContentId>(value)));
+        initialized = true;
     }
-
-
-    /**
-     * Put a URI into the set.
-     * 
-     * @param uri
-     * this will be inserted into the backing repo and it's id will become one of the set.
-     * 
-     * @return
-     * the instance called.
-     */
-    public SetDatum build(URI uri) {
-        add( repo.put(
-                uri.toString().getBytes(Repo.defaultCharset)
-                ));
-        return this;
+    
+    protected SetDatum(CidScheme cs, SortedSet<ContentId> value) {
+        cidScheme = cs;
+        backingSet = value;
+        assert backingSet.size() == 0 || backingSet.iterator().next().getCidScheme().equals(cidScheme);
+        isMutable = false;
+        initialized = true;
     }
-
-    /**
-     * Put anything that can be converted into a byte array into the set.
-     */
-    public SetDatum build(ToByteArray data) {
-        return this.build(data.toByteArray());
+    
+    public SetDatum() {
+        backingSet = null;
+        initialized = false;
+        isMutable = false;
     }
-
-    public SetDatum build(byte[] byteArray) {
-        add(repo.put(byteArray));
-        return this;
+    
+    @Override
+    public Object clone() {
+        TreeSet<ContentId> newBackingSet = new TreeSet<ContentId>(backingSet);
+        return new SetDatum(cidScheme, newBackingSet);
     }
-
-    public static SetDatum fromData(Repo repo2, Set<? extends ToByteArray> graphData) {
-        SetDatum ret = new SetDatum(repo2);
-        ret.addAll(graphData);
-        return ret;
-    }
-
-    public void addAll(Set<? extends ToByteArray> data) {
-        for (ToByteArray gd : data)
-            build(gd);
-    }
-
-    /**
-     * The datumId must reference a set of references.
-     * 
-     * @param repo
-     * Where to look up the datumId.
-     * 
-     * @param datumId
-     * The id for the content of the set.
-     */
-    public static SortedSet<ContentId> toSet(Repo repo, BigInteger datumId) {
+    
+    @Override // Stuffable
+    public void init(Stuffed stuffed) {
+        assert !initialized;
+        assert !isMutable;
+        ResolvableId cid = stuffed.getTopId();
+        this.cidScheme = cid.getCidScheme();
+        
         SortedSet<ContentId> toFill = new TreeSet<ContentId>();
-        InputStream ids = new ByteArrayInputStream(repo.get(datumId));
+        byte[] thisSetDatumInBinary = cid.resolve();
+        assert thisSetDatumInBinary != null : "could not get content for:\n"+ cid;
+        InputStream ids = new ByteArrayInputStream(thisSetDatumInBinary);
         try {
-            byte[] val = new byte[repo.keyLength()];
+            byte[] val = new byte[cid.getCidScheme().getKeyLength()];
             for(int nbrRead = ids.read(val);
                     nbrRead == val.length;
                     nbrRead = ids.read(val)) {
-                toFill.add(new ContentId(repo, val));
+                ContentId cidItem = new BasicContentId(cid.getCidScheme(), val);
+                toFill.add(new ContentIdResolvable(cidItem, stuffed.get(cidItem)));
             }
             assert ids.read() == -1;
         } catch (IOException ioe) {
             assert false : "there is something drastically wrong if a ByteArrayInputStream throws an IOException";
         }
-        return toFill;
+        backingSet = toFill;
+        initialized = true;
     }
+    
 
     /**
-     * Get the data for the content id and create a SetDatum from it.
+     * Put a URI into the set. If the set is not mutable a clone will be returned.
+     * 
+     * @param uri
+     * this will be inserted into the backing repo and it's id will become one of the set.
+     * 
+     * @return
+     * the instance called or a clone.
      */
-    public static SetDatum inflate(ContentId cid) {
-        return new SetDatum(toSet(cid.repo, cid));
+    public SetDatum build(URI uri) {
+        if (! isMutable) {
+            SetDatum ret = (SetDatum) clone();
+            ret.add( ret.cidScheme.keyFor(
+                    uri.toString().getBytes(Util.defaultCharset)
+                    ));
+            return ret;
+        }
+        add( cidScheme.keyFor(
+                uri.toString().getBytes(Util.defaultCharset)
+                ));
+        return this;
+    }
+    
+    public SetDatum build(ContentId cid) {
+        assert cidScheme.equals(cid.getCidScheme());
+        if (! isMutable) {
+            SetDatum ret = (SetDatum) clone();
+            ret.add(cid);
+            return ret;
+        }
+        add(cid);
+        return this;
+    }
+
+    public SetDatum build(Set<? extends ContentId> data) {
+        if (isMutable) {
+            for (ContentId gd : data)
+                build(gd);
+            return this;
+        }
+        SetDatum ret = this;
+        for (ContentId gd : data)
+            ret = ret.build(gd);
+        return ret;
     }
 
     @Override
     public boolean add(ContentId object) {
+        assert object.getCidScheme().equals(getCidScheme());
+        assert isMutable;
         return backingSet.add(object);
     }
 
     @Override
     public boolean addAll(Collection<? extends ContentId> arg0) {
+        assert isMutable;
         return backingSet.addAll(arg0);
     }
 
     @Override
     public void clear() {
+        assert isMutable;
         backingSet.clear();
     }
 
     @Override
     public boolean contains(Object object) {
+        assert object instanceof HasContentId : "the object to compare must be a HasContentId. it is a "+ object.getClass().getCanonicalName();
         return backingSet.contains(object);
     }
 
@@ -238,17 +291,12 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray {
     public byte[] toByteArray() {
         if (isEmpty())
             return new byte[0];
-        int keyLength;
-        if (repo == null) {
-            ContentId containedId = backingSet.iterator().next();
-            if (containedId.repo == null)
-                keyLength = containedId.toByteArray().length;
-            else keyLength = containedId.repo.keyLength;
-        } else keyLength = repo.keyLength;
+        assert cidScheme != null;
+        int keyLength = cidScheme.getKeyLength();
         byte[] ret = new byte[keyLength *size()];
         int offset = 0;
         for (ContentId i : this) {
-            assert i.repo.keyLength == keyLength;
+//            assert i.getCidScheme().equals(getCidScheme());
             System.arraycopy(i.toByteArray(), 0, ret, offset, keyLength);
             offset += keyLength;
         }
@@ -293,4 +341,46 @@ public class SetDatum implements SortedSet<ContentId>, ToByteArray {
         return this;
     }
 
+    @Override
+    public int compareTo(HasContentId arg0) {
+        return getId().compareTo(arg0.getId());
+    }
+
+    @Override
+    public ResolvableId getId() {
+        assert (!isMutable) && initialized;
+        if (cachedId == null || isMutable) {
+            Repo r = Util.getDefaultRepo(cidScheme);
+            if (r != null) {
+                ContentId cid = r.put(this.toByteArray());
+                if (cid instanceof ResolvableId)
+                    cachedId = (ResolvableId)cid;
+                else
+                    cachedId = new ContentIdResolvable(r, cid.toByteArray());
+            } else
+                cachedId = new ContentIdResolvable(cidScheme, toByteArray());
+        }
+        return cachedId;
+    }
+    
+    @Override // Stuffable
+    public Stuffed stuff(Repo r, CidScheme cids) throws NotInRepoException {
+        if(! r.getCidScheme().equals(this.cidScheme))
+            throw new IllegalArgumentException("provide a repo containing content accessible via the content ids in this stuffable.");
+        if (cachedId == null || isMutable)
+            cachedId = new ContentIdResolvable(getCidScheme(), this.toByteArray());
+        LinearVirtualRepo lvr = new LinearVirtualRepo(cids);
+        for (ContentId value : this)
+            lvr.put(repoGet(r, value));
+        return new VirtualRepoBackedStuffed(lvr, cachedId);
+    }
+
+    public boolean getIsMutable() {
+        return isMutable;
+    }
+
+    @Override
+    public CidScheme getCidScheme() {
+        return cidScheme;
+    }
 }

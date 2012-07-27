@@ -1,7 +1,10 @@
 package org.baseparadigm;
 
 import java.util.Iterator;
-import java.util.SortedSet;
+
+import org.baseparadigm.i.CidScheme;
+import org.baseparadigm.i.ContentId;
+import org.baseparadigm.i.ResolvableId;
 
 
 /**
@@ -11,20 +14,29 @@ import java.util.SortedSet;
  */
 public class GraphData implements Iterable<GraphDatum> {
     public static GraphData empty = new GraphData(SetDatum.empty);
-    public SetDatum data;
+    public final SetDatum data;
+    public final CidScheme cidScheme;
     public GraphData(SetDatum value) {
         this.data = value;
-        assert ! value.isMutable;
+        this.cidScheme = value.getCidScheme();
         assert assertAllGraphData(value);
     }
-    public GraphData(ContentId cid) {
-        data = SetDatum.inflate(cid);
-        assert assertAllGraphData(data);
+    
+    public GraphData build(GraphDatum g) {
+        if (data.getIsMutable()) {
+            data.build(data.cidScheme.keyFor(g.toByteArray()));
+            return this;
+        }
+        data.buildFinish();
+        return new GraphData(data.build(data.cidScheme.keyFor(g.toByteArray())));
     }
     
-    private boolean assertAllGraphData(SortedSet<ContentId> graphData) {
-        for (ContentId ci : graphData) {
-            new GraphDatum(ci);
+    private boolean assertAllGraphData(SetDatum graphData) {
+        for (ContentId cid : graphData) {
+            if (cid instanceof ResolvableId)
+                new GraphDatum(((ResolvableId)cid).getRepo(), cid);
+            else
+                new GraphDatum(Util.getDefaultRepo(cidScheme), cid);
         }
         // the constructor does the assertion
         return true;
@@ -39,7 +51,11 @@ public class GraphData implements Iterable<GraphDatum> {
             }
             @Override
             public GraphDatum next() {
-                return new GraphDatum(sit.next());
+                ContentId n = sit.next();
+                if (n instanceof ResolvableId)
+                    return new GraphDatum(((ResolvableId)n).getRepo(), n);
+                else
+                    return new GraphDatum(Util.getDefaultRepo(cidScheme), n);
             }
             @Override
             public void remove() {

@@ -13,59 +13,104 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.baseparadigm.i.CidScheme;
+import org.baseparadigm.i.ContentId;
+import org.baseparadigm.i.HasCidScheme;
+import org.baseparadigm.i.HasContentId;
+import org.baseparadigm.i.Repo;
+import org.baseparadigm.i.ResolvableId;
+import org.baseparadigm.i.Stuffable;
+import org.baseparadigm.i.Stuffed;
+import org.baseparadigm.i.ToByteArray;
 
-public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
+import static org.baseparadigm.Util.repoGet;
+
+public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray, HasContentId, Stuffable, Cloneable {
     public SortedMap<ContentId, SetDatum> backingMap;
-    public Repo repo;
-    private boolean modifyRepo = true;
-    private boolean isMutable = true;
-    public MapDatum(Repo repo, BigInteger datumId) {
-        this.repo = repo;
-        this.backingMap = Collections.unmodifiableSortedMap(toMap(repo, datumId));
+    public CidScheme cidScheme;
+    public ResolvableId cachedId = null;
+    
+    // note how isMutable and initialized are used in constructors
+    protected boolean isMutable = true;
+    protected boolean initialized = false;
+    
+    public MapDatum(Stuffed datumId) {
+        this.cidScheme = datumId.getCidScheme();
+        assert cidScheme != null;
+        isMutable = false;
+        initialized = false;
+        init(datumId);
+        assert backingMap != null; 
+        assert initialized == true;
     }
     
     /**
      * Mutable, for building; call buildFinish() to make immutable.
      * @param baseParadigm
      */
-    public MapDatum(Repo baseParadigm) {
-        repo = baseParadigm;
+    public MapDatum(CidScheme scheme) {
+        cidScheme = scheme;
+        assert cidScheme != null;
         backingMap = new TreeMap<ContentId, SetDatum>();
         isMutable = true;
+        initialized = true;
     }
-
     
     /**
-     * Immutable
-     * @param value
+     * Same as {@link MapDatum#MapDatum(CidScheme)}. A reference to the
+     * {@link Repo} is not kept.
+     * 
+     * @param baseParadigm
      */
-    public MapDatum(SortedMap<ContentId, SetDatum> map) {
-        if (map.size() == 0)
-            throw new IllegalStateException(
-                    "MapDatum instances need to belong to a BaseParadigm instance, which cannot be inferred from an empty map.");
-        repo = map.keySet().iterator().next().repo;
-        backingMap = Collections.unmodifiableSortedMap(map);
+    public MapDatum(Repo repo) {
+        cidScheme = repo.getCidScheme();
+        assert cidScheme != null;
+        backingMap = new TreeMap<ContentId, SetDatum>();
+        isMutable = true;
+        initialized = true;
+    }
+    
+    /**
+     * Make an uninitialized MapDatum; use init(Stuffed) next.
+     */
+    public MapDatum() {
+        backingMap = null;
         isMutable = false;
-    }
-
-    /**
-     * Get the data for the content id and create a MapDatum from it.
-     */
-    public static MapDatum inflate(ContentId cid) {
-        return new MapDatum(toMap(cid.repo, cid));
+        initialized = false;
     }
     
     /**
-     * builder pattern for method chaining
+     * this constructor used by {@link MapDatum#clone()}
+     * @param map The content to populate the map datum.
+     * @param isMutable whether the resulting MapDatum is mutable
      */
-    public MapDatum build(String key, int value) {
-        if (! isMutable)
-            throw new UnsupportedOperationException("this DatumMap is immutable");
-        put(
-                new ContentId(repo, key.getBytes(repo.getCharset()))
-                , new BigInteger(""+ value).toByteArray()
-                );
-        return this;
+    public MapDatum(CidScheme cids, SortedMap<ContentId, SetDatum> map, boolean isMutable) {
+        assert (! (map instanceof HasCidScheme)) || ((MapDatum) map).cidScheme.equals(cids);
+        cidScheme = cids;
+        assert map.size() == 0 || map.keySet().iterator().next().getCidScheme().equals(cidScheme);
+        if (map instanceof MapDatum)
+            this.backingMap = ((MapDatum)map).backingMap;
+        else
+            this.backingMap = map;
+        this.isMutable = isMutable;
+        this.initialized = true;
+    }
+
+    /**
+     * Similar to using the zero arg constructor and
+     * {@link MapDatum#init(Stuffed)}, but specifies where to search for content
+     * instead of bundling all necessary content in a {@link Stuffed}.
+     * 
+     * @param repo
+     *            where to look up the given content id and nested content ids
+     *            as well
+     * @param cid
+     *            this is the same thing {@link Stuffed#getTopId()} would return
+     *            if you were initializing a MapDatum using a Stuffed.
+     */
+    public MapDatum(Repo repo, ContentId cid) {
+        // TODO
+        throw new Error("unimplemented");
     }
 
     /**
@@ -73,76 +118,88 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      * @return this
      */
     public MapDatum build(String key, SetDatum data) {
-        if (! isMutable)
-            throw new UnsupportedOperationException("this DatumMap is immutable");
-        put(repo.put(key.getBytes(repo.getCharset())), data);
+        assert data.cidScheme.equals(cidScheme);
+        if (! isMutable) {
+            MapDatum ret = (MapDatum) clone();
+            ret.put(ret.cidScheme.keyFor(key.getBytes(Util.defaultCharset)), data);
+            return ret;
+        }
+        put(cidScheme.keyFor(key.getBytes(Util.defaultCharset)), data);
+        return this;
+    }
+
+    public MapDatum build(ContentId field, ContentId cid) {
+        assert cid.getCidScheme().equals(cidScheme) && field.getCidScheme().equals(cidScheme);
+        if (! isMutable) {
+            MapDatum ret = (MapDatum) clone();
+            ret.put(field, cid);
+            return ret;
+        }
+        put(field, cid);
         return this;
     }
 
     /**
-     * Adds the given item to the set at the ContentId for the key string.
-     * @return this
+     * like {@link MapDatum#put(ContentId, SetDatum)}
+     * @param cidKey the key for the content being put
+     * @param values what to replace all values at the kiven key with
+     * @return this if mutable, or a clone if not mutable
      */
-    public MapDatum build(String fieldName, byte[] item) {
-        if (! isMutable)
-            throw new UnsupportedOperationException("this DatumMap is immutable");
-        put(repo.put(fieldName.getBytes(repo.getCharset())), item);
+    public MapDatum build(ContentId cidKey, SetDatum values) {
+        assert cidKey.getCidScheme().equals(cidScheme) && values.getCidScheme().equals(cidScheme);
+        if (! isMutable) {
+            MapDatum ret = (MapDatum) clone();
+            ret.put(cidKey, values);
+            return ret;
+        }
+        put(cidKey, values);
         return this;
     }
 
     public MapDatum build(String fieldName, ContentId cid) {
-        if (! isMutable)
-            throw new UnsupportedOperationException("this DatumMap is immutable");
-        assert cid.repo == repo;
-        put(repo.put(fieldName.getBytes(repo.getCharset())), cid);
-        return this;
-    }
-    
-    /**
-     * build(fieldName, bytes.toByteArray())
-     */
-    public MapDatum build(String fieldName, ToByteArray bytes) {
-        return build(fieldName, bytes.toByteArray());
+        return build(cidScheme.keyFor(fieldName.getBytes(Util.defaultCharset)), cid);
     }
 
+    public MapDatum build(CharSequence fieldName, CharSequence fieldValue) {
+        return build(cidScheme.keyFor(fieldName.toString().getBytes(Util.defaultCharset))
+                , fieldValue.toString().getBytes(Util.defaultCharset));
+    }
+    
     /**
-     * build(field.name(), string.getBytes())
+     * The bytes parameter will have a {@link ContentId} generated for it and
+     * inserted as one of the values.
+     * 
+     * @param key
+     *            the key under which to store the value
+     * @param bytes
+     *            the content to store
+     * @return
      */
-    public MapDatum build(MetadataFields field, String string) {
-        return build(field.name(), string.getBytes());
+    private MapDatum build(ContentId key, byte[] bytes) {
+        return build(key, cidScheme.keyFor(bytes));
     }
 
-    /**
-     * build(content.name(), bytes)
-     */
-    public MapDatum build(MetadataFields field, byte[] bytes) {
-        return build(field.name(), bytes);
-    }
-    
-    /**
-     * build(field.name(), byteSize.toByteArray())
-     */
-    public MapDatum build(MetadataFields field, ToByteArray byteSize) {
-        return build(field.name(), byteSize.toByteArray());
-    }
-    
     /**
      * put what the ContentId resolves to into this MapDatum, whether that
      *  means using the given ContentId, or resolving and reinserting into
      *  the Repo for this MapDatum.
      */
     public MapDatum build(MetadataFields field, ContentId cid) {
-        if (cid.repo == repo)
+        if (cid.getCidScheme().equals(cidScheme))
             return build(field.name(), cid);
-        else
-            return build(field.name(), cid.resolve());
+        else if (cid instanceof ResolvableId)
+            return build(field.name(), cidScheme.keyFor(((ResolvableId)cid).resolve()));
+        throw new IllegalArgumentException("the given content id neither matches the scheme nor can resolve to bytes");
     }
 
     /**
-     * like build(MetadataFields.TYPE, byte[])
+     * Assumes the elements of {@link TypeValues} are already inserted.
      */
-    public GraphDatum buildType(TypeValues tv) {
-        return (GraphDatum) build(MetadataFields.TYPE, tv.name().getBytes(repo.getCharset()));
+    public MapDatum buildType(TypeValues tv) {
+        return build(MetadataFields.TYPE
+                , cidScheme.keyFor(
+                        tv.name().getBytes(Util.defaultCharset))
+                );
     }
 
     /**
@@ -157,36 +214,12 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
         return this;
     }
     
-
-    /**
-     * The datumId must reference a map of references to references to sets.
-     * 
-     * @param repo
-     * Where to look up the datumId.
-     * 
-     * @param datumId
-     * The id for the content of the map.
-     */
-    public static SortedMap<ContentId, SetDatum> toMap(Repo repo, BigInteger datumId) {
-        SortedMap<ContentId, SetDatum> toFill = new TreeMap<ContentId, SetDatum>();
-        InputStream pairs = new ByteArrayInputStream(repo.get(datumId));
-        try {
-            byte[] pair = new byte[repo.keyLength() *2];
-            int nbrRead = pairs.read(pair);
-            for(byte[] k, v;
-                    nbrRead == pair.length;
-                    nbrRead = pairs.read(pair)) {
-                k = repo.get(Arrays.copyOfRange(pair, 0, repo.keyLength()));
-                v = repo.get(Arrays.copyOfRange(pair, repo.keyLength(), pair.length));
-                SetDatum setOfReferences = new SetDatum(repo, new BigInteger(v));
-                toFill.put(new ContentId(repo, k), setOfReferences);
-            }
-        } catch (IOException ioe) {
-            assert false : "there is something drastically wrong if a ByteArrayInputStream throws an IOException";
-        }
-        return toFill;
+    @Override
+    public Object clone() {
+        TreeMap<ContentId, SetDatum> newBackingMap = new TreeMap<ContentId, SetDatum>(backingMap);
+        return new MapDatum(cidScheme, newBackingMap, isMutable);
     }
-    
+
     @Override
     public void clear() { backingMap.clear(); }
     @Override
@@ -224,7 +257,7 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      */
     public SetDatum getField(MetadataFields field) {
         // TODO optimize
-        return get(repo.idFor(field.name().getBytes(repo.getCharset())));
+        return get(cidScheme.keyFor(field.name().getBytes(Util.defaultCharset)));
     }
     
     
@@ -242,53 +275,32 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
      */
     @Override
     public SetDatum put(ContentId key, SetDatum value) {
+        assert value.getCidScheme().equals(cidScheme) && (value.size() == 0 ||
+                value.iterator().next().getCidScheme().equals(cidScheme)) :
+                    "CidScheme from incoming set should match this map's CidScheme";
         return backingMap.put(key, value);
-    }
-    
-    /**
-     * Inserts the given byteArray into the backing repo (if modifyRepo is true) and inserts
-     *  its content id into the set located at the given key.
-     */
-    public SetDatum put(ContentId key, byte[] byteArray) {
-        return put(key
-                , modifyRepo
-                ? repo.put(byteArray)
-                : repo.idFor(byteArray));
     }
     
     /**
      * Inserts the given content id into the set located at the given key.
      */
     public SetDatum put(ContentId key, ContentId val) {
-        SetDatum replacing = get(key);
-        if (replacing != null) {
-            SetDatum merged = new SetDatum(replacing);
-            merged.add(val);
-            return put(key, merged);
+        assert isMutable;
+        if (backingMap.containsKey(key)) {
+            SetDatum prevVal = backingMap.get(key);
+            return backingMap.put(key, prevVal.build(val));
         }
-        replacing = new SetDatum(repo);
-        replacing.add(val);
-        return put(key, replacing);
-    }
-    
-    /**
-     * If set true, a DatumMap instance will insert content
-     *  inserted into it into the BaseParadigm instance it contains.
-     *  
-     * @param willModifyRepo
-     * whether to insert new content into BaseParadigm
-     */
-    public MapDatum setModifyRepo(boolean willModifyRepo) {
-        modifyRepo = willModifyRepo;
-        return this;
+        return backingMap.put(key, new SetDatum(cidScheme).build(val));
     }
     
     @Override
     public void putAll(Map<? extends ContentId, ? extends SetDatum> arg0) {
+        assert isMutable;
         backingMap.putAll(arg0);
     }
     @Override
     public SetDatum remove(Object key) {
+        assert isMutable;
         return backingMap.remove(key);
     }
     @Override
@@ -302,15 +314,22 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
 
     @Override
     public byte[] toByteArray() {
-        byte[] ret = new byte[repo.keyLength *size() *2];
+        byte[] ret = new byte[cidScheme.getKeyLength() *size() *2];
         int offset = 0;
         for (Map.Entry<ContentId, SetDatum> entry : entrySet()) {
-            System.arraycopy(entry.getKey().toByteArray(), 0, ret, offset, repo.keyLength);
-            offset += repo.keyLength;
-            byte[] src = repo.put(new SetDatum(entry.getValue()).toByteArray()).toByteArray();
-            assert src.length == repo.keyLength;
-            System.arraycopy( src, 0, ret, offset, repo.keyLength);
-            offset += repo.keyLength;
+            System.arraycopy(entry.getKey().toByteArray(), 0, ret, offset, cidScheme.getKeyLength());
+            offset += cidScheme.getKeyLength();
+            assert entry.getValue().size() >= 0 : "maybe I don't really have to assert this";
+            SetDatum valSet;
+            if (entry.getValue().size() > 0) {
+                valSet = new SetDatum(entry.getValue());
+            } else {
+                valSet = new SetDatum(cidScheme).buildFinish();
+            }
+            byte[] src = cidScheme.keyFor(valSet.toByteArray()).toByteArray();
+            assert src.length == cidScheme.getKeyLength() : "wrong length.\n src: "+ src.length +"\n repo: "+ cidScheme.getKeyLength();
+            System.arraycopy( src, 0, ret, offset, cidScheme.getKeyLength());
+            offset += cidScheme.getKeyLength();
         }
         return ret;
     }
@@ -346,25 +365,92 @@ public class MapDatum implements SortedMap<ContentId, SetDatum>, ToByteArray{
         return backingMap.tailMap(startKey);
     }
 
-    /**
-     * Add an item to the metadata about the content this MapDatum is metadata about.
-     * convenience for put(ContentId, byte[])
-     */
-    public SetDatum put(MetadataFields metadataField, byte[] byteArray) {
-        return this.put(metadataField.name(), byteArray);
+    @Override
+    public ResolvableId getId() {
+        assert (!isMutable) && initialized;
+        if (cachedId == null || isMutable) {
+            Repo r = Util.getDefaultRepo(cidScheme);
+            if (r != null) {
+                ContentId cid = r.put(toByteArray());
+                if (cid instanceof ResolvableId)
+                    cachedId = (ResolvableId)cid;
+                else
+                    cachedId = new ContentIdResolvable(r, cid.toByteArray());
+            } else
+                cachedId = new ContentIdResolvable(cidScheme, toByteArray());
+        }
+        return cachedId;
     }
     
     /**
-     * like put(ContentId, byte[])
+     * Insert this MapDatum into the {@link Repo} but also
+     * {@link Stuffable#stuff(Repo)} every value.
+     * @see MapDatum#init(Stuffed)
+     * @return something for {@link MapDatum#init(Stuffed)} to use
+     * @throws NotInRepoException 
      */
-    public SetDatum put(String fieldName, byte[] byteArray) {
-        return put(repo.idFor(fieldName.getBytes(repo.getCharset())), byteArray);
+    @Override // Stuffable
+    public Stuffed stuff(Repo r, CidScheme cids) throws NotInRepoException {
+        if(! r.getCidScheme().equals(cidScheme))
+            throw new IllegalArgumentException("provide a repo containing content accessible via the content ids in this stuffable.");
+        if (cachedId == null || isMutable) {
+            cachedId = new ContentIdResolvable(cidScheme, this.toByteArray());
+            assert (! Util.intensiveAssertions) || this.equals(new MapDatum(r, cachedId));
+        }
+        LinearVirtualRepo lvr = new LinearVirtualRepo(cids);
+        for (java.util.Map.Entry<ContentId, SetDatum> entry : this.entrySet()) {
+            lvr.put(repoGet(r, entry.getKey()));
+            lvr.put(entry.getValue().toByteArray());
+            for (ContentId cid : entry.getValue())
+                lvr.put(repoGet(r, cid));
+        }
+        return new VirtualRepoBackedStuffed(lvr, cachedId);
+    }
+    
+    @Override // Stuffable
+    public void init(Stuffed stuffed) {
+        assert !initialized;
+        assert !isMutable : "zero arg constructor should have made this map datum immutable";
+        
+        SortedMap<ContentId, SetDatum> toFill = new TreeMap<ContentId, SetDatum>();
+        cidScheme = stuffed.getCidScheme();
+        byte[] thisMapDatumInBinary = stuffed.getTopId().resolve();
+        assert thisMapDatumInBinary != null : "stuffed should contain all necessary data "+ stuffed;
+        InputStream pairs = new ByteArrayInputStream(thisMapDatumInBinary);
+        try {
+            byte[] pair = new byte[cidScheme.getKeyLength() *2];
+            for(int nbrRead = pairs.read(pair)
+                    ;nbrRead == pair.length
+                    ;nbrRead = pairs.read(pair)) {
+                ContentId keyCid = new BasicContentId(cidScheme,
+                        Arrays.copyOfRange(pair, 0, cidScheme.getKeyLength())
+                        );
+                ResolvableId valCid = new ContentIdResolvable(stuffed,
+                        Arrays.copyOfRange(pair, cidScheme.getKeyLength(), pair.length)
+                        );
+                SetDatum values = new SetDatum();
+                values.init(new VirtualRepoBackedStuffed(stuffed, valCid));
+                toFill.put(keyCid, values);
+            }
+        } catch (IOException ioe) {
+            assert false : "there is something drastically wrong if a ByteArrayInputStream throws an IOException";
+        }
+
+        backingMap = Collections.unmodifiableSortedMap(toFill);
+        initialized = true;
     }
 
-    public ContentId id = null;
-    public ContentId getId() {
-        if (id == null)
-            id = repo.put(this);
-        return id;
+    @Override
+    public int compareTo(HasContentId o) {
+        return o.getId().compareTo(getId());
+    }
+
+    @Override
+    public CidScheme getCidScheme() {
+        return cidScheme;
+    }
+
+    public boolean isMutable() {
+        return isMutable;
     }
 }
